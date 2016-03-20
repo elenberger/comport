@@ -1,0 +1,103 @@
+<core:View xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc"
+	xmlns="sap.m" xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form"
+	class="sapUiSizeCompact"
+	controllerName="views.OrderForm" xmlns:html="http://www.w3.org/1999/xhtml">
+	<Page showHeader="true" title="Orders">
+
+		<headerContent>
+			<Button id="onHome" icon="sap-icon://home" press="onNavBack" />
+		</headerContent>
+
+		<l:Grid defaultSpan="L12 M12 S12" width="auto">
+			<f:SimpleForm minWidth="1024" width="" editable="false"
+				title="Order header" labelMinWidth="192" layout="ResponsiveGridLayout"
+				labelSpanL="3" labelSpanM="3" emptySpanL="4" emptySpanM="4"
+				columnsL="1" columnsM="1">
+				<Label text="ID" />
+				<Text text="{id}" />
+
+				<Label text="Description" />
+				<Text text="{descr}" />
+
+				<Label text="Date begin" />
+				<Text text="{dstart}" />
+
+			</f:SimpleForm>
+			<IconTabBar>
+				<items>
+					<IconTabFilter id="idPositions" text="Positions">
+						<content>
+							<Table xmlns="sap.m" id="idTabPos" items="{path: 'pos'}">
+								<items>
+									<ColumnListItem>
+										<cells>
+											<Text text="{id}" />
+											<Text text="{text}" />
+											<Text text="{amount}" />
+										</cells>
+									</ColumnListItem>
+								</items>
+
+								<columns>
+									<Column id="idID" width="100px">
+										<Label text="Identificator" />
+									</Column>
+									<Column id="idText">
+										<Label text="Description" />
+									</Column>
+									<Column id="idAmount">
+										<Label text="Amount" />
+									</Column>
+
+								</columns>
+							</Table>
+						</content>
+					</IconTabFilter>
+
+					<IconTabFilter id="idParties" text="Parties">
+						<content>
+							<Table xmlns="sap.m" id="idTabParties" items="{path: 'parties'}">
+								<items>
+									<ColumnListItem>
+										<cells>
+											<Text text="{role}" />
+											<Text text="{id}" />
+											<Text text="{text}" />
+										</cells>
+									</ColumnListItem>
+								</items>
+
+								<columns>
+									<Column id="idParRole" width="100px">
+										<Label text="Role" />
+									</Column>
+									<Column id="IdParID" width="100px">
+										<Label text="Id" />
+									</Column>
+									<Column id="idParText">
+										<Label text="Description" />
+									</Column>
+
+								</columns>
+							</Table>
+
+
+
+						</content>
+					</IconTabFilter>
+
+
+				</items>
+			</IconTabBar>
+
+		</l:Grid>
+		<footer>
+			<Toolbar>
+				<ToolbarSpacer />
+				<Button text="Approve" type="Accept" enabled="false" />
+				<Button text="Reject" type="Reject" enabled="false" />
+
+			</Toolbar>
+		</footer>
+	</Page>
+</core:View>

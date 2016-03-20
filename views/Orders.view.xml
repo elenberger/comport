@@ -1,0 +1,20 @@
+<core:View xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc"
+	xmlns="sap.m" controllerName="views.Orders" xmlns:html="http://www.w3.org/1999/xhtml">
+		<SplitContainer id="idOrders" mode="HideMode" masterButtonText="List">
+			<masterPages>
+				<Page id="idMasterPage" showHeader="false">
+					<List id="idOrdersList" itemPress="" items="{path: '/orders'}">
+						<StandardListItem title="{id}" description="{descr}" 
+							type="DetailAndActive"  press="onOrderPress" />
+					</List>
+
+				</Page>
+			</masterPages>
+			
+
+
+			
+		</SplitContainer>
+		
+		
+</core:View>

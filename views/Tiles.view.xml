@@ -1,0 +1,35 @@
+<core:View xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc"
+	xmlns="sap.m" controllerName="views.Tiles" xmlns:html="http://www.w3.org/1999/xhtml">
+	<Page title="Business partner Collaboration - Cockpit" >
+	<headerContent>
+			<Button id="onSettings" icon="sap-icon://settings" press="openSettings" />
+			<Button id="onlogout" icon="sap-icon://log" press="onLogout" />
+		</headerContent>
+		
+		<content>
+			<TileContainer xmlns="sap.m" height="50%">
+				<StandardTile xmlns="sap.m" id="idOwnOrdersAll" title="All orders"
+					info="sdf" activeIcon="" number="23" numberUnit="12" press="openOrders">
+				</StandardTile>
+
+				<StandardTile xmlns="sap.m" id="idOwnOrdersDelivered"
+					title="Delivered orders" info="" activeIcon="" number="555"
+					numberUnit="1">
+				</StandardTile>
+
+
+			</TileContainer>
+			<TileContainer xmlns="sap.m" height="50%">
+				<StandardTile xmlns="sap.m" id="idInvoicesAll" title="All Invoices"
+					info="sdf" activeIcon="" number="12" numberUnit="1">
+				</StandardTile>
+
+				<StandardTile xmlns="sap.m" id="idInvoicesAppr" title="Invoices for approval"
+					info="" activeIcon="" number="3" numberUnit="0">
+				</StandardTile>
+
+			</TileContainer>
+
+		</content>
+	</Page>
+</core:View>

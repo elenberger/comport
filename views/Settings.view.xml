@@ -1,0 +1,22 @@
+<core:View xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc"
+	xmlns="sap.m" xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form"
+	controllerName="views.Settings" xmlns:html="http://www.w3.org/1999/xhtml">
+	<Page title="Settings">
+		<headerContent>
+			<Button id="onHome" icon="sap-icon://home" press="onNavBack" />
+		</headerContent>
+
+		<content>
+			<l:Grid defaultSpan="L12 M12 S12" width="auto">
+				<f:SimpleForm minWidth="1024" width="" editable="true"
+					title="Main settings" labelMinWidth="192" layout="ResponsiveGridLayout"
+					labelSpanL="3" labelSpanM="3" emptySpanL="4" emptySpanM="4"
+					columnsL="1" columnsM="1">
+					<Label text="Internal Patrner identificator" />
+					<Text text="232323232" editable="false" />
+
+				</f:SimpleForm>
+			</l:Grid>
+		</content>
+	</Page>
+</core:View>
