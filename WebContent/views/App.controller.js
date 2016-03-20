@@ -22,7 +22,7 @@ sap.ui.controller("views.App", {
 		// Add pages
 		var oTiles = sap.ui.view({
 			id : "idTiles",
-			viewName : "demopartner.Tiles",
+			viewName : "views.Tiles",
 			type : sap.ui.core.mvc.ViewType.XML
 		});
 		oTiles.getController().AppController = this;
