@@ -10,7 +10,9 @@ sap.ui.controller("views.OrderForm", {
 //	},
 	
 	onNavBack: function() {
-		this.ParentController.AppController.navBack();
+		
+		var sMaster = this.ParentController.getView().byId("idOrders").getInitialMaster();
+	  this.ParentController.getView().byId("idOrders").toMaster(sMaster);
 	},
 
 /**

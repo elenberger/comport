@@ -12,9 +12,15 @@ sap.ui.controller("views.Orders", {
 			viewName : "views.OrderForm",
 			type : sap.ui.core.mvc.ViewType.XML
 		});
-      oOrderForm.getController().ParentController = this;
-		this.getView().byId("idOrders").addDetailPage(oOrderForm); 
-		this.getView().byId("idOrders")
+    
+		oOrderForm.getController().ParentController = this;
+	
+		oOrderForm.byId("Form1").setShowNavButton(sap.ui.Device.system.phone);
+		
+		this.getView().byId("idOrders").addDetailPage(oOrderForm.byId("Form1")); 
+		this.getView().byId("idOrders").setInitialDetail(oOrderForm.byId("Form1"));
+		
+		
 	},
 
 
@@ -25,8 +31,19 @@ sap.ui.controller("views.Orders", {
 		
 		var oContext = evt.getSource().getBindingContext();
 		
-		this.getView().byId("idOrders").getPage("idOrderForm").setBindingContext(oContext);
-//		this.getView().byId("idOrders").hideMaster();
+		var sForm1 = this.getView().byId("idOrders").getInitialDetail(); 
+		
+		this.getView().byId("idOrders").getPage(sForm1).setBindingContext(oContext);
+
+		this.getView().byId("idOrders").hideMaster();
+		
+		this.getView().byId("idOrders").toDetail(sForm1);
+		
+		
+	},
+	
+	navBack: function(evt) {
+		this.AppController.navBack(); 
 	}
 	
 /**
