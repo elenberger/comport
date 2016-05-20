@@ -19,7 +19,7 @@ var auth = function (req, res, next) {
   }
   
 
- usersModel.findOne({id: user.name }, function (err, dbuser) {
+ usersModel.findOne({userid: user.name }, function (err, dbuser) {
    
    if ((err) || (!dbuser)) return unauthorized(res);
    

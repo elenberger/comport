@@ -3,6 +3,8 @@ var router = express.Router();
 var path = require('path');
 var auth = require('./auth');
 var orders = require('./orders');
+var users = require('./users');
+var partners = require('./partners');
 
 
 
@@ -23,8 +25,18 @@ router.get('/login', function(req, res, next) {
 });
 
 
+router.get('/partners', partners.getList);
+
+router.get('/users', users.getList); 
+//router.post('/users', users.addRecord); 
+
+
 router.get('/orders', orders.getList); 
 router.post('/orders', orders.addRecord); 
+
+
+
+
 // router.get('/orders', function(req, res, next) {
   
 //   console.log("orders");

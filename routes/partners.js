@@ -1,14 +1,14 @@
-var usersModel = require('./dbwrapper').usersModel;
+var partnersModel = require('./dbwrapper').partnersModel;
 
 getList = function (req, res) {
 
     res.setHeader("Content-Type", "application/json");
 
-    usersModel.find({}, function (err, users) {
+    partnersModel.find({}, function (err, partners) {
         if (!err) {
 
             res.write(JSON.stringify({
-                users: users
+                partners: partners
             }));
 
         }
