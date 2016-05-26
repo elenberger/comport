@@ -15,6 +15,41 @@ sap.ui.controller("views.OrderForm", {
 	//	var sMaster = this.ParentController.getView().byId("idOrders").getInitialMaster();
 	//  this.ParentController.getView().byId("idOrders").toMaster(sMaster);
 	},
+    
+    onTabSelect: function(evt) {
+        //alert("selected");
+        var oView  = this.getView();
+        var oContext = oView.byId("Form1").getBindingContext();
+        var sNum = oContext.getModel().getProperty(oContext.getPath()).num;
+        
+        var oTab = evt.getParameters().selectedItem;
+      
+        var sAuth = window.sessionStorage.getItem('Auth');
+        
+        oView.setBusy(true);
+        
+        jQuery.ajax({
+			type: 'GET',
+			url: "/orders/" + sNum,
+			headers: {
+			'Authorization': sAuth
+			},
+			success: function(data, stat, xhdr) {
+				if (xhdr.status == '200') {
+          					
+					oTab.setModel(new sap.ui.model.json.JSONModel(data));
+					oTab.bindElement("/orderDetails");
+                    oView.setBusy(false);
+
+				}
+			},
+			error: function(data, stat, xhdr) {
+				alert("Access denied!");
+                oView.setBusy(false);
+			}
+		});
+
+    },
 
 /**
 * Similar to onAfterRendering, but this hook is invoked before the controller's View is re-rendered

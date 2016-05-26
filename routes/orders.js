@@ -1,4 +1,6 @@
 var ordersModel = require('./dbwrapper').ordersModel;
+var rest = require('./restcallwrapper');
+
 
 var mongoose = require('mongoose');
 var ValidationError = mongoose.Error.ValidationError;
@@ -120,35 +122,51 @@ getOrderDetails = function(req, res) {
 
     //Object to retrieve and push Order details
     
-    //req.params.id
+    var sId = req.params.id;
     
-    var orderDetails = {
-        num: "", //string(10)
-        date: "", // date a string YYYY-MM-DD
-        note: "", //String
-        netamout: 0, //currency
-        vatamout: 0, 
-        positions: [{posid: 0, 
-                     postxt: "", 
-                     deliverydate: "",
-                     quntity: 0, 
-                     price: 0, 
-                     netamout: 0, 
-                     vatamout: 0}],
-        parties:   [{posid: 0, 
-                     partnerid: "", 
-                     role: "" //for PO will be Vendoe, for SO will be customer
-                    } ]
-    };
-    
-    var Details1 = orderDetails;
-
-         res.write(JSON.stringify({
-                order: Details1
+    rest.performGetRequest("/sap/bc/rest/z_comport/po/"+sId, "", function(bkndres){
+        
+        
+                 res.write(JSON.stringify({
+                orderDetails: bkndres
             }));
         
 
         return res.end();
+                    
+    });
+    
+//    
+//    //req.params.id
+//    res.setHeader("Content-Type", "application/json");
+//    
+//    var orderDetails = {
+//        num: "4508937483", //string(10)
+//        date: "2016-05-25", // date a string YYYY-MM-DD
+//        note: "Our order", //String
+//        netamout: 5000, //currency
+//        vatamout: 1000, 
+//        positions: [{posid: 0, 
+//                     postxt: "", 
+//                     deliverydate: "",
+//                     quntity: 0, 
+//                     price: 0, 
+//                     netamout: 0, 
+//                     vatamout: 0}],
+//        parties:   [{posid: 0, 
+//                     partnerid: "", 
+//                     role: "" //for PO will be Vendoe, for SO will be customer
+//                    } ]
+//    };
+//    
+//    var Details1 = orderDetails;
+//
+//         res.write(JSON.stringify({
+//                orderDetails: Details1
+//            }));
+//        
+//
+//        return res.end();
                     
     
 };

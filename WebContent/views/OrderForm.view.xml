@@ -1,11 +1,11 @@
-<core:View xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m" xmlns:semantic="sap.m.semantic" xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form" controllerName="views.OrderForm" xmlns:html="http://www.w3.org/1999/xhtml">
-    <semantic:DetailPage id="Form1" title="Orders" navButtonPress="onNavBack" showHeader="true">
+<core:View xmlns:core="sap.ui.core" xmlns:commons="sap.ui.commons" xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m" xmlns:semantic="sap.m.semantic" xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form" controllerName="views.OrderForm" xmlns:html="http://www.w3.org/1999/xhtml">
+    <semantic:DetailPage id="Form1" title="Orders" navButtonPress="onNavBack">
 
         <semantic:customHeaderContent>
             <Button icon="sap-icon://home" press="onNavBack" />
         </semantic:customHeaderContent>
 
-        <IconTabBar stretchContentHeight="true">
+        <IconTabBar stretchContentHeight="true" select="onTabSelect">
             <items>
                 <IconTabFilter icon="sap-icon://header" id="idOverview" text="Overview">
                     <content>
@@ -18,13 +18,13 @@
 
                             <Label text="Date" />
                             <Text text="{date}" />
-                            
+
                             <Label text="Status" />
                             <Text text="{stat}" />
 
                         </f:SimpleForm>
 
-                        <Table class="sapUiSizeCompact"  headerText="Partners" xmlns="sap.m" id="idTabPartners" items="{path: 'partners'}">
+                        <Table class="sapUiSizeCompact" headerText="Partners" xmlns="sap.m" id="idTabPartners" items="{path: 'partners'}">
                             <items>
                                 <ColumnListItem>
                                     <cells>
@@ -54,51 +54,50 @@
 
                 <IconTabFilter icon="sap-icon://cause" id="idDetails" text="Details">
                     <content>
+                        <f:SimpleForm minWidth="1024" width="" editable="false" labelMinWidth="192" layout="ResponsiveGridLayout" labelSpanL="3" labelSpanM="3" emptySpanL="4" emptySpanM="4" columnsL="1" columnsM="1">
+                            <Label text="Number" />
+                            <Text text="{num}" />
+                            <Label text="Date" />
+                            <Text text="{date}" />
+                            <Label text="Note" />
+                            <Text text="{note}" />
+                            <Label text="Net amount" />
+                            <Text text="{netamount}" />
+                            
+                            <Label text="VAT amount" />
+                            <Text text="{vatamount}" />
+                            
+                        </f:SimpleForm>
+
                     </content>
 
                 </IconTabFilter>
 
                 <IconTabFilter icon="sap-icon://approvals" id="idApproval" text="Approval">
-                    <content>
-
-                        <Table xmlns="sap.m" class="sapUiSizeCompact" id="idTabApproval" items="{path: 'approval'}">
-                            <items>
-                                <ColumnListItem>
-                                    <cells>
-                                        <Text text="{stepno}" />
-                                        <Text text="{steptype}" />
-                                        <Text text="{partnername}" />
-                                        <Text text="{executed}" />
-                                        <Text text="{executor}" />
-                                    </cells>
-                                </ColumnListItem>
-                            </items>
-
-                            <columns>
-                                <Column id="idStepNo" width="100px">
-                                    <Label text="Step" />
-                                </Column>
-                                <Column id="idStepType">
-                                    <Label text="Step type" />
-                                </Column>
-                                <Column id="idPartner">
-                                    <Label text="Partner\Approver" />
-                                </Column>
-                                <Column id="idExecuted">
-                                    <Label text="Executed" />
-                                </Column>
-                                <Column id="idExecutedBy">
-                                    <Label text="Executed by" />
-                                </Column>
-
-                            </columns>
-                        </Table>
+                    <IconTabBar id="idApprovalSteps" selectedKey="Step2">
+                        <items>
+                            <IconTabFilter id="Step1555" icon="sap-icon://approvals">
+                                <f:SimpleForm minWidth="1024" width="" editable="false" labelMinWidth="192" layout="ResponsiveGridLayout" labelSpanL="3" labelSpanM="3" emptySpanL="4" emptySpanM="4" columnsL="1" columnsM="1">
+                                    <Label text="Approver" />
+                                    <Text text="We deliver everyting" />
+                                    <Label text="Comment" />
+                                    <TextArea value="Approved" enabled="false" />
+                                </f:SimpleForm>
+                            </IconTabFilter>
+                            <IconTabSeparator icon="sap-icon://process" />
+                            <IconTabFilter id="Step2" design="Vertical" text="We deliver everything" icon="sap-icon://approvals" iconColor="Positive" key="Step2">
+                                <f:SimpleForm minWidth="1024" width="" editable="true" labelMinWidth="192" layout="ResponsiveGridLayout" labelSpanL="3" labelSpanM="3" emptySpanL="4" emptySpanM="4" columnsL="1" columnsM="1">
+                                    <Label text="Comment" />
+                                    <TextArea value="{comment}" />
+                                </f:SimpleForm>
 
 
-                    </content>
+                            </IconTabFilter>
+                            <IconTabSeparator icon="sap-icon://process" />
+                            <IconTabFilter id="Step3" icon="sap-icon://approvals" />
+                        </items>
+                    </IconTabBar>
                 </IconTabFilter>
-
-
             </items>
         </IconTabBar>
 
