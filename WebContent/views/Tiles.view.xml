@@ -8,24 +8,24 @@
 		
 		<content>
 			<TileContainer xmlns="sap.m" height="50%">
-				<StandardTile xmlns="sap.m" id="idOwnOrdersAll" title="All orders"
-					info="sdf" activeIcon="" number="23" numberUnit="12" press="openOrders">
+				<StandardTile xmlns="sap.m" id="idMyOrders" title="My orders"
+					info="sdf" icon="sap-icon://document-text" number="23" numberUnit="12" press="openOrders">
 				</StandardTile>
 
-				<StandardTile xmlns="sap.m" id="idOwnOrdersDelivered"
-					title="Delivered orders" info="" activeIcon="" number="555"
+				<StandardTile xmlns="sap.m" id="idIncomingInvoices"
+					title="Incoming invoices" info="" icon="sap-icon://sales-notification" number="555"
 					numberUnit="1">
 				</StandardTile>
 
 
 			</TileContainer>
 			<TileContainer xmlns="sap.m" height="50%">
-				<StandardTile xmlns="sap.m" id="idInvoicesAll" title="All Invoices"
-					info="sdf" activeIcon="" number="12" numberUnit="1">
+				<StandardTile xmlns="sap.m" id="idIncomingOrders" title="Incoming orders"
+					info="sdf" icon="sap-icon://my-sales-order" number="12" numberUnit="1">
 				</StandardTile>
 
-				<StandardTile xmlns="sap.m" id="idInvoicesAppr" title="Invoices for approval"
-					info="" activeIcon="" number="3" numberUnit="0">
+				<StandardTile xmlns="sap.m" id="idMyInvoices" title="My Invoices"
+					info="" icon="sap-icon://travel-expense-report" number="3" numberUnit="0">
 				</StandardTile>
 
 			</TileContainer>

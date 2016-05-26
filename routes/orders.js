@@ -1,9 +1,10 @@
 var ordersModel = require('./dbwrapper').ordersModel;
 
+var mongoose = require('mongoose');
+var ValidationError = mongoose.Error.ValidationError;
+var ValidatorError  = mongoose.Error.ValidatorError;
 
-//var orders = function() {
 
-//  var oObj = {};
 
 testImport = function () {
 
@@ -47,9 +48,30 @@ testImport = function () {
 };
 
 addRecord = function (req, res) {
+    
+//    var Order = new ordersModel(req.body);
+//    Order.save();
+    
+ordersModel.schema.pre('save', function(next) {
+   if (this.num.length > 10) {
+       var error = new ValidationError(this);
+       error.errors.num = new ValidatorError('num', 'length for number is invalid', 'notvalid', this.num);
+    return next(error);
+   }
+    
+    this.stat = 'Approval';
+    
+    next();
+    
+});
+    
     ordersModel.create(req.body, function (err, order) {
-
-        if (err) return console.log(err);
+        
+        
+        if (err) 
+        { console.log(err);
+            return res.send(err) }
+        
         return res.send(order);
 
     });
@@ -62,9 +84,26 @@ getList = function (req, res) {
 
     res.setHeader("Content-Type", "application/json");
 
-    ordersModel.find({}, function (err, orders) {
+    ordersModel.find().lean().exec(function (err, orders) {
         if (!err) {
-
+            
+            //add some fields in order
+            
+            for (i=0; i<orders.length; i++) {
+                var doc = orders[i];
+            
+                //add partner description
+                for (j=0; j<doc.partners.length; j++) {
+                    doc.partners[j].partnername = "We deliver everything";
+                }
+                
+                //add static approval procedure
+                var aApprovals = [{stepno:1, steptype:"approval", partnername: "We deliver everything"},
+                                  {stepno:2, steptype:"notification", partnername: "Good big company"}   ];
+                
+                orders[i].approval = aApprovals;
+            }
+            
             res.write(JSON.stringify({
                 orders: orders
             }));
@@ -74,29 +113,47 @@ getList = function (req, res) {
         return res.end();
 
     });
-    //   var aObj  = [{
-    // 			"id": "10044",
-    // 			"descr": "order1344455",
-    // 			"dstart": "01.01.2016",
-    // 			"dfinish": "31.03.2016",
-    // 			"pos": [
-    // 			  {"id": "1","text": "service1", "amount": 1334.34},
-    // 			  {"id": "2","text": "service2", "amount": 150.01},
-    // 			  {"id": "3","text": "service3", "amount": 12.00}],
-
-    // 			"parties": [
-    // 			{"role": "vendor", "id": "1234567894", "text": " Aldomayer AG"},
-    // 			{"role": "billto", "id": "1234567895", "text": " Schweriner moebel GmbH"}
-    // 			]
-    // 		}];
-
-
-
 
 };
 
-//return oObj;
+getOrderDetails = function(req, res) {
+
+    //Object to retrieve and push Order details
+    
+    //req.params.id
+    
+    var orderDetails = {
+        num: "", //string(10)
+        date: "", // date a string YYYY-MM-DD
+        note: "", //String
+        netamout: 0, //currency
+        vatamout: 0, 
+        positions: [{posid: 0, 
+                     postxt: "", 
+                     deliverydate: "",
+                     quntity: 0, 
+                     price: 0, 
+                     netamout: 0, 
+                     vatamout: 0}],
+        parties:   [{posid: 0, 
+                     partnerid: "", 
+                     role: "" //for PO will be Vendoe, for SO will be customer
+                    } ]
+    };
+    
+    var Details1 = orderDetails;
+
+         res.write(JSON.stringify({
+                order: Details1
+            }));
+        
+
+        return res.end();
+                    
+    
+};
 
 
 module.exports.addRecord = addRecord;
 module.exports.getList = getList;
+module.exports.getOrderDetails = getOrderDetails;

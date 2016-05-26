@@ -1,22 +1,21 @@
 <core:View xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc"
-	xmlns="sap.m" controllerName="views.Orders" xmlns:html="http://www.w3.org/1999/xhtml">
-	 <Page title="application page" showHeader="true" >
-		<headerContent>
-		 <Button icon="sap-icon://home" press="navBack"/>
-		 </headerContent> 
+	xmlns="sap.m" xmlns:semantic="sap.m.semantic"  controllerName="views.Orders" xmlns:html="http://www.w3.org/1999/xhtml">
+
 		<SplitApp id="idOrders"  mode="HideMode" masterButtonText="List"  initialMaster="idMasterPage" >
 			<masterPages>
-				<Page id="idMasterPage" title="OrdersApp"  >
+				<semantic:MasterPage id="idMasterPage" title="OrdersApp"  >
 					<List id="idOrdersList" itemPress="" items="{path: '/orders'}">
-						<StandardListItem title="{id}" description="{descr}" 
+						<StandardListItem title="{num} {note}" description="{date}" info="{stat}" 
 							type="Active"  press="onOrderPress" />
 					</List>
 
-				</Page>
+                    <semantic:filter>
+                        <semantic:FilterAction/>
+                    </semantic:filter>
+				</semantic:MasterPage>
 			</masterPages>
 			
 			
 		</SplitApp>
-</Page>
-		
+	
 </core:View>

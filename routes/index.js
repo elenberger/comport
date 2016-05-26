@@ -31,7 +31,8 @@ router.get('/users', users.getList);
 //router.post('/users', users.addRecord); 
 
 
-router.get('/orders', orders.getList); 
+router.get('/orders', orders.getList);
+router.get('/orders/:id/', orders.getOrderDetails);
 router.post('/orders', orders.addRecord); 
 
 

@@ -38,7 +38,7 @@ var partners = new Schema({
 
 var orders = new Schema({
     partnerid: String,
-    num:  String,
+    num:  {type: String, required: true, maxlength: 20},
     date: String,
     stat: String,
     note: String,
@@ -54,6 +54,15 @@ var orderDetail = new Schema({
 parties: [{role: {type: String}, id: {type: String}, text: {type: String}}]
   });
 
+
+
+
+///Workflow schema 
+var workflows = new Schema({
+    wfid: {type: String},
+    partnerid: {type: String},
+    steps: [{stepno: {type: Number}, steptype: {type: String}, role: {type: String} }] //steptype=[approval, notification]
+})
 
 
 var usersModel = mongoose.model('users', users);
