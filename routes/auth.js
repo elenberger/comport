@@ -26,6 +26,7 @@ var auth = function (req, res, next) {
    
    if (user.pass == dbuser.pass) {
       console.log("authorized");
+     //    res.setHeader("Access-Control-Allow-Origin", "*");
          return next();
   } else {
     console.log("credentials " + user.name + " " + user.pass + " not valid" );
@@ -34,27 +35,7 @@ var auth = function (req, res, next) {
    
    
  });
-  
-//   var user1 = new usersModel({
-//      id: "Ivan",
-//      pass: "1233"
-//    });
-  
-//   console.log("save");
-//   user1.save(function(err){});
-  
-  
-
-  
-  
-  
-//   if (user.name === 'foo' && user.pass === 'bar') {
-//     console.log("authorized");
-//     return next();
-//   } else {
-//     console.log("credentials " + user.name + " " + user.pass + " not valid" );
-//     return unauthorized(res);
-//   }
 }
+
 
 module.exports = auth;

@@ -34,7 +34,7 @@ sap.ui.controller("views.Login", {
 						
 						//Variant2
 						window.sessionStorage.setItem("Auth", sAuth);
-						oController.App.to("idTiles");
+						oController.App.to("pageCockpit");
 					}
 				},
 				error: function(data, stat, xhdr) {

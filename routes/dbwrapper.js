@@ -16,7 +16,7 @@ db.once('open', function callback () {
 
 var Schema = mongoose.Schema;
 
-//Schemas
+// Schemas
 
 var users = new Schema({
     userid: {type: String, maxlength: 10 },
@@ -25,15 +25,17 @@ var users = new Schema({
 	email: String,
 	address: String,
     comment: String,
-    sadm: Boolean
+    sadm: Boolean,
+    roles: [{type: String, enum: ["", "ADMINISTRATOR", "AP-ORD", "AP-INV", "AR-ORD", "AR-INV"]}],
+    partners: [{crdate: {type: Date, default: Date.now}, partner: { type: Schema.Types.ObjectId, ref: 'partners' }}]
 });
 
 var partners = new Schema({
-    partnerid: String,
-	email: String,
-	address: String,
-    comment: String,
-    users: [{userid: {type: String, maxlength: 10 }}]        
+    partnerid: {type: String},
+    partnername: {type: String},
+	email: {type: String},
+	address: {type: String},
+    comment: {type: String}        
 });
 
 var orders = new Schema({
@@ -42,7 +44,8 @@ var orders = new Schema({
     date: String,
     stat: String,
     note: String,
-    partners: [{role: {type: String}, partnerid: {type: String}}]
+    parties: [{role: {type: String}, partnerid: {type: String}}],
+    approval: [{stepno: {type: Number}, steptype: {type: String}, partnerid: {type: String}, approve: {type: Boolean}}]
 });
     
 var orderDetail = new Schema({
@@ -51,24 +54,28 @@ var orderDetail = new Schema({
 			dstart: {type: String},
 			dfinish: {type: String},
 			pos: [ {id: {type: String}, text: {type: String}, amount: {type: String}}	],
-parties: [{role: {type: String}, id: {type: String}, text: {type: String}}]
+parties: [{role: {type: String}, id: {type: String}, text: {type: String}}],
+approval: [{stepno: {type: Number}, steptype: {type: String}, role: {type: String}, partnerid: {type: String}, approve: {type: Boolean}}]
   });
 
 
 
 
-///Workflow schema 
+// /Workflow schema
 var workflows = new Schema({
     wfid: {type: String},
     partnerid: {type: String},
-    steps: [{stepno: {type: Number}, steptype: {type: String}, role: {type: String} }] //steptype=[approval, notification]
+    steps: [{stepno: {type: Number}, steptype: {type: String}, role: {type: String} }] // steptype=[approval,
+																						// notification]
 })
 
 
 var usersModel = mongoose.model('users', users);
 var partnersModel = mongoose.model('partners', partners);
 var ordersModel = mongoose.model('orders', orders);
+var workflowsModel = mongoose.model('workflows', workflows);
 
 module.exports.usersModel = usersModel;
-module.exports.partnersModel = usersModel;
+module.exports.partnersModel = partnersModel;
 module.exports.ordersModel = ordersModel;
+module.exports.workflowsModel = workflowsModel;

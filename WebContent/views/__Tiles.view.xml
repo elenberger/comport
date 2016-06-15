@@ -1,0 +1,41 @@
+<core:View xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc"
+	xmlns="sap.m" controllerName="views.Tiles" xmlns:html="http://www.w3.org/1999/xhtml">
+	<Page title="Communication Portal - Cockpit">
+		<headerContent>
+			<Button id="onSettings" icon="sap-icon://settings" press="openSettings" />
+			<Button id="onlogout" icon="sap-icon://log" press="onLogout" />
+		</headerContent>
+
+		<content>
+			<Title text="Accounts Payable" titleStyle="H3" textAlign="Center" class="sapUiSmallMarginBegin sapUiSmallMarginTop" />
+
+			<TileContainer xmlns="sap.m" height="45%">
+				<StandardTile xmlns="sap.m" id="idMyOrders" title="My orders"
+					info="sdf" icon="sap-icon://document-text" number="23" numberUnit="12"
+					press="openOrders">
+				</StandardTile>
+
+				<StandardTile xmlns="sap.m" id="idIncomingInvoices"
+					title="Incoming invoices" info="" icon="sap-icon://sales-notification"
+					number="555" numberUnit="1">
+				</StandardTile>
+			</TileContainer>
+
+			<Title text="Accounts Receivable" titleStyle="H3" textAlign="Center" class="sapUiSmallMarginBegin "/>
+
+			<TileContainer xmlns="sap.m" height="45%">
+				<StandardTile xmlns="sap.m" id="idIncomingOrders"
+					title="Incoming orders" info="sdf" icon="sap-icon://my-sales-order"
+					number="12" numberUnit="1">
+				</StandardTile>
+
+				<StandardTile xmlns="sap.m" id="idMyInvoices" title="My Invoices"
+					info="" icon="sap-icon://travel-expense-report" number="3"
+					numberUnit="0">
+				</StandardTile>
+
+			</TileContainer>
+
+		</content>
+	</Page>
+</core:View>

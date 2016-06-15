@@ -1,22 +1,33 @@
 var partnersModel = require('./dbwrapper').partnersModel;
 
-getList = function (req, res) {
+getList = function(req, res) {
 
-    res.setHeader("Content-Type", "application/json");
+	res.setHeader("Content-Type", "application/json");
 
-    partnersModel.find({}, function (err, partners) {
-        if (!err) {
+	partnersModel.find({}).lean().exec(function(err, partners) {
+		if (!err) {
 
-            res.write(JSON.stringify({
-                partners: partners
-            }));
+			res.write(JSON.stringify({
+				partners : partners
+			}));
 
-        }
+		}
 
-        return res.end();
+		return res.end();
 
-    });
+	});
+},
+
+getPartnerById = function(sPartner) {
+
+	return new Promise(function(resolve,reject) {
+		partnersModel.findOne({partnerid : sPartner}).lean().exec(
+				function(err, partner) {
+		             resolve(partner);
+	}) 
+	});
+
 }
 
-//module.exports.addRecord = addRecord;
+ module.exports.getPartnerById = getPartnerById;
 module.exports.getList = getList;

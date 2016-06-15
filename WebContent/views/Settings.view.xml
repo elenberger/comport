@@ -1,22 +1,183 @@
 <core:View xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc"
 	xmlns="sap.m" xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form"
 	controllerName="views.Settings" xmlns:html="http://www.w3.org/1999/xhtml">
-	<Page title="Settings">
+	<Page title="Settings" class="sapUiSizeCompact">
 		<headerContent>
 			<Button id="onHome" icon="sap-icon://home" press="onNavBack" />
 		</headerContent>
-
 		<content>
-			<l:Grid defaultSpan="L12 M12 S12" width="auto">
-				<f:SimpleForm minWidth="1024" width="" editable="true"
-					title="Main settings" labelMinWidth="192" layout="ResponsiveGridLayout"
-					labelSpanL="3" labelSpanM="3" emptySpanL="4" emptySpanM="4"
-					columnsL="1" columnsM="1">
-					<Label text="Internal Patrner identificator" />
-					<Text text="232323232" editable="false" />
 
-				</f:SimpleForm>
-			</l:Grid>
+			<IconTabBar stretchContentHeight="true">
+				<items>
+					<IconTabFilter icon="sap-icon://employee" id="tabUsers"
+						text="Users" key="users">
+						<content>
+							<SplitContainer initialDetail="pageUsersDetails"
+								initialMaster="pageUsersList">
+								<masterPages>
+									<Page id="pageUsersList" showHeader="false">
+										<SearchField id="searchUserField" search="onSearchUser"
+											width="auto" />
+										<List items="{path: '/users'}">
+											<StandardListItem title="{userid}"
+												description="{name}" type="Active" press="onUserDetails" />
+										</List>
+									</Page>
+								</masterPages>
+
+								<detailPages>
+									<Page id="pageUsersDetails" showHeader="false">
+
+										<IconTabBar stretchContentHeight="true">
+											<items>
+												<IconTabFilter text="General">
+													<content>
+														<f:SimpleForm editable="false">
+															<Label text="UserID" />
+															<Input value="{userid}" />
+															<Label text="Name" />
+															<Input value="{name}" />
+															<Label text="Address" />
+															<Input value="{address}" />
+															<Label text="Email" />
+															<Input value="{email}" />
+															<Label text="Comment" />
+															<Input value="{comment}" />
+															<Label text="Admin" />
+															<CheckBox selected="sadm" />
+															<html:BR />
+															<Label text="Roles" />
+															<MultiComboBox id="rolesInput"
+																selectedKeys="{roles}">
+																<items>
+																	<core:Item text="Administrator" key="ADMINISTRATOR" />
+																	<core:Item text="AP-Ordering" key="AP-ORD" />
+																	<core:Item text="AP-Invoicing" key="AP-INV" />
+																	<core:Item text="AR-Ordering" key="AR-ORD" />
+																	<core:Item text="AR-Invoicing" key="AR-INV" />
+																</items>
+															</MultiComboBox>
+														</f:SimpleForm>
+													</content>
+												</IconTabFilter>
+
+												<IconTabFilter text="Partners" class="sapUiSmallMargin">
+													<content>
+														<Table id="tableUserPartners" headerText="User assignments"
+															items="{path: 'partners'}">
+															<columns>
+																<Column id="colPartner">
+																	<Label text="Partner ID" />
+																</Column>
+																<Column id="colCrDate">
+																	<Label text="Assignment date" />
+																</Column>
+															</columns>
+
+															<items>
+																<ColumnListItem type="Inactive">
+																	<cells>
+																		<ObjectIdentifier title="{partner/partnerid}"
+																			text="{partner/partnername}" />
+																		<ObjectIdentifier title="{crdate}" />
+
+																	</cells>
+																</ColumnListItem>
+
+
+															</items>
+
+														</Table>
+													</content>
+												</IconTabFilter>
+											</items>
+										</IconTabBar>
+
+									</Page>
+								</detailPages>
+							</SplitContainer>
+						</content>
+					</IconTabFilter>
+
+					<IconTabFilter icon="sap-icon://collaborate" id="tabPartners"
+						text="Partners" key="partners">
+						<content>
+<SplitContainer initialDetail="pagePartnersDetails"
+								initialMaster="pagePartnersList">
+								<masterPages>
+									<Page id="pagePartnersList" showHeader="false">
+										<SearchField id="searchPartnerField" search="onSearchPartner"
+											width="auto" />
+										<List items="{path: '/partners'}">
+											<StandardListItem title="{partnerid}"
+												description="{partnername}" type="Active" press="onPartnerDetails" />
+										</List>
+									</Page>
+								</masterPages>
+
+								<detailPages>
+									<Page id="pagePartnersDetails" showHeader="false">
+
+										<IconTabBar stretchContentHeight="true">
+											<items>
+												<IconTabFilter text="General">
+													<content>
+														<f:SimpleForm editable="false">
+															<Label text="ID" />
+															<Input value="{partnerid}" />
+															<Label text="Name" />
+															<Input value="{partnername}" />
+															<Label text="Address" />
+															<Input value="{address}" />
+															<Label text="Email" />
+															<Input value="{email}" />
+															<Label text="Comment" />
+															<Input value="{comment}" />
+														</f:SimpleForm>
+													</content>
+												</IconTabFilter>
+
+												<IconTabFilter text="PartnerUsers" class="sapUiSmallMargin">
+													<content>
+														<Table id="tablePartnerUsers" headerText="User assignments"
+															items="{path: 'users'}">
+															<columns>
+																<Column id="colPartnerUser">
+																	<Label text="User" />
+																</Column>
+																<Column id="colPartnerCrDate">
+																	<Label text="Assignment date" />
+																</Column>
+															</columns>
+
+															<items>
+																<ColumnListItem type="Inactive">
+																	<cells>
+																		<ObjectIdentifier title="{user/userid}"
+																			text="{user/name}" />
+																		<ObjectIdentifier title="{crdate}" />
+
+																	</cells>
+																</ColumnListItem>
+
+
+															</items>
+
+														</Table>
+													</content>
+												</IconTabFilter>
+											</items>
+										</IconTabBar>
+
+									</Page>
+								</detailPages>
+							</SplitContainer>
+						</content>
+					</IconTabFilter>
+
+				</items>
+			</IconTabBar>
+
 		</content>
 	</Page>
 </core:View>

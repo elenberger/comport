@@ -13,7 +13,7 @@ var sAuth = 'Basic ';
 //var sessionId = null;
 //var deckId = '68DC5A20-EE4F-11E2-A00C-0858C0D5C2ED';
 
-function performGetRequest(endpoint, data, success) {
+function performGetRequest(endpoint, data, success, error) {
   var dataString = JSON.stringify(data);
   var headers = {'Authorization': sAuth};
   
@@ -46,6 +46,7 @@ function performGetRequest(endpoint, data, success) {
   req.end();
   req.on('error', function(error){
      console.log(error); 
+    error(error);  
   });    
 }
 

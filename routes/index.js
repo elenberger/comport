@@ -14,21 +14,38 @@ router.use(function(req, res, next) {
 
 /* GET home */
 router.get('/login', function(req, res, next) {
-  
-	res.end();
-  	 			 
-			 //		res.sendFile(path.join(__dirname, '../WebContent','index.html'));
+    
+	users.getUser(req, res).then(
+			
+			function(oUser){
+				//fill access\roles parameters
+				res.setHeader("Content-Type", "application/json");
+	            
+				var oAccess = {"ADMINISTRATOR": false, "AP-ORD": false, "AP-INV":false, "AR-ORD": false, "AR-INV":false};
+				var aRoles = oUser.roles;
+				if (aRoles) {
+				for (i=0;i<aRoles.length; i++) {
+					oAccess[aRoles[i]] = true;
+				}
+				}
+				res.write(JSON.stringify({
+	                access: oAccess
+	            }));
+				res.end();
+			}, 			
+			function(err){
+		res.end(err);	
+	});
 	
 	
-  // res.render('index', { title: 'Express' });
- // var i = 1;
+    
 });
 
 
 router.get('/partners', partners.getList);
 
 router.get('/users', users.getList); 
-//router.post('/users', users.addRecord); 
+router.post('/assignpartner', users.assignPartner); 
 
 
 router.get('/orders', orders.getList);

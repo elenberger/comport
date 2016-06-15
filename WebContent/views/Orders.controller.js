@@ -7,18 +7,18 @@ sap.ui.controller("views.Orders", {
 */
 	onInit: function() {
       		
-		var oOrderForm =  sap.ui.view({
-			id : "idOrderForm",
-			viewName : "views.OrderForm",
-			type : sap.ui.core.mvc.ViewType.XML
-		});
+//		var oOrderForm =  sap.ui.view({
+//			id : "idOrderForm",
+//			viewName : "views.OrderForm",
+//			type : sap.ui.core.mvc.ViewType.XML
+//		});
     
-		oOrderForm.getController().ParentController = this;
+	//	oOrderForm.getController().ParentController = this;
 	
-		oOrderForm.byId("Form1").setShowNavButton(sap.ui.Device.system.phone);
+	//	oOrderForm.byId("Form1").setShowNavButton(sap.ui.Device.system.phone);
 		
-		this.getView().byId("idOrders").addDetailPage(oOrderForm.byId("Form1")); 
-		this.getView().byId("idOrders").setInitialDetail(oOrderForm.byId("Form1"));
+	//	this.getView().byId("idOrders").addDetailPage(oOrderForm.byId("Form1")); 
+	//	this.getView().byId("idOrders").setInitialDetail(oOrderForm.byId("Form1"));
 		
 		
 	},
@@ -30,19 +30,21 @@ sap.ui.controller("views.Orders", {
 		
 		
 		var oContext = evt.getSource().getBindingContext();
+	
+		this.AppController.navTo("OrderForm", oContext);
 		
-		var sForm1 = this.getView().byId("idOrders").getInitialDetail(); 
+//		var sForm1 = this.getView().byId("idOrders").getInitialDetail(); 
 		
-		this.getView().byId("idOrders").getPage(sForm1).setBindingContext(oContext);
+//		this.getView().byId("idOrders").getPage(sForm1).setBindingContext(oContext);
 
-		this.getView().byId("idOrders").hideMaster();
+//		this.getView().byId("idOrders").hideMaster();
 		
-		this.getView().byId("idOrders").toDetail(sForm1);
+//		this.getView().byId("idOrders").toDetail(sForm1);
 		
 		
 	},
 	
-	navBack: function(evt) {
+	onNavBack: function(evt) {
 		this.AppController.navBack(); 
 	}
 	

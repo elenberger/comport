@@ -4,16 +4,14 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta http-equiv='Content-Type' content='text/html;charset=UTF-8'/>
 
-		<script src="resources/sap-ui-core-dbg.js"
+		<script src="resources/sap-ui-core.js"
 				id="sap-ui-bootstrap"
 				data-sap-ui-libs="sap.m"
 				data-sap-ui-theme="sap_bluecrystal" 
-				data-sap-ui-xx-bindingSyntax="complex"
+				data-sap-ui-compatVersion="edge"
+				
 				>
 	
-		//data-sap-ui-resourceroots='{
-	//   "comport": "./WebContent"
-//}'
 		</script>
 		<!-- only load the mobile lib "sap.m" and the "sap_bluecrystal" theme -->
   
@@ -22,11 +20,6 @@
 				
 				var app = sap.ui.core.mvc.XMLView({viewName:"views.App", type:sap.ui.core.mvc.ViewType.XML});
 				app.placeAt("content");
-				
-				//var app = new sap.m.App({initialPage:"idLogin1"});
-				//var page = sap.ui.view({id:"idLogin1", viewName:"demopartner.App", type:sap.ui.core.mvc.ViewType.XML});
-				//app.addPage(page);
-				//app.placeAt("content");
 		</script>
 
 	</head>
