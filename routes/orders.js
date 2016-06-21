@@ -49,10 +49,74 @@ testImport = function() {
 
 };
 
-addRecord = function(req, res) {
+// Route order operation(C-Create, U-update, D-Delete, A-Approve, R-Reject )
 
-	// var Order = new ordersModel(req.body);
-	// Order.save();
+maintainOrder = function(req, res) {
+	// get operation, num and partnerid from request.
+
+	var sOper = req.body.operation;
+
+	if (req.body.order) {
+		var sOrdernum = req.body.order.num;
+		var sPartnerid = req.body.order.partnerid;
+	}
+
+	if (!sOper || !sOrdernum || !sPartnerid) {
+		var err = new Error('Wrong message format');
+		err.status = 500;
+		return res.end(err);
+	}
+
+	// find order and check status.
+	ordersModel.findOne({
+		partnerid : sPartnerid,
+		num : sOrdernum
+	}).exec(function(err, order) {
+
+		switch (sOper) {
+
+		case "C":
+			if (order) {
+				var err = new Error('Order exists! ');
+				err.status = 500;
+				return res.end(err);
+			}
+			
+			addRecord(req.body.order);
+			
+			break;
+		case "U":
+			//remove old order and create new
+			if (order) {
+				order.remove(function(err,removed) {});
+				}
+			addRecord(req.body.order);
+			
+			break;
+		case "D":
+			if (order) {
+			order.remove(function(err,removed) {
+				res.end();
+			});
+			}
+			break;
+		case "A":
+		case "R":
+
+			break;
+
+		default:
+			var err = new Error('Wrong message format');
+			err.status = 500;
+			return res.end(err);
+
+		}
+
+	});
+
+};
+
+addRecord = function(oOrder) {
 
 	ordersModel.schema.pre('save', function(next) {
 		if (this.num.length > 10) {
@@ -99,7 +163,7 @@ addRecord = function(req, res) {
 
 	});
 
-	ordersModel.create(req.body, function(err, order) {
+	ordersModel.create(oOrder, function(err, order) {
 
 		if (err) {
 			console.log(err);
@@ -112,51 +176,63 @@ addRecord = function(req, res) {
 
 };
 
-getList = function(req, res) {
+getOwnOrders = function(req, res) {
 
 	res.setHeader("Content-Type", "application/json");
 
-// get partnerid's which can see user.
-	getUser(req, res).then(function(oUser){
+	// get partnerid's which can see user.
+	getUser(req, res).then(function(oUser) {
 		var aPartners = [];
 		if (oUser.partners) {
-		for (i=0; i<oUser.partners.length; i++){
-			aPartners.push(oUser.partners[i].partner.partnerid);
+			for (i = 0; i < oUser.partners.length; i++) {
+				aPartners.push(oUser.partners[i].partner.partnerid);
+			}
 		}
-		}
-		
-		if (aPartners.length == 0) return res.end();
-	
-		ordersModel.find({partnerid: { $in: aPartners }}).lean().exec(function(err, orders) {
-			
-			if (err) return res.end(err);
 
-				// add some fields in order
+		if (aPartners.length == 0)
+			return res.end();
 
-				var pOrders = new Promise(function(resolve, reject) {
-					var aProm = [];
-					for (var s = 0; s < orders.length; s++) {
-						var oDoc = orders[s];
+		ordersModel.find({
+			partnerid : {
+				$in : aPartners
+			}
+		}).lean().exec(function(err, orders) {
 
-						aProm.push(_getOrder(oDoc));
+			if (err)
+				return res.end(err);
 
-					}
+			// add some fields in order
 
-					Promise.all(aProm).then(function(aDocs) {
-						resolve(orders);
-					});
+			var pOrders = new Promise(function(resolve, reject) {
+				var aProm = [];
+				for (var s = 0; s < orders.length; s++) {
+					var oDoc = orders[s];
 
+					aProm.push(_getOrder(oDoc));
+
+				}
+
+				Promise.all(aProm).then(function(aDocs) {
+					resolve(orders);
 				});
 
-				pOrders.then(function(orders) {
+			});
 
-					res.write(JSON.stringify({
-						orders : orders
-					}));
-					return res.end();
-				});
-	
-	});
+			pOrders.then(function(orders) {
+
+				// final corrections
+				for (d = 0; d < orders.length; d++) {
+					orders[d].approvable = false;
+				}
+
+				// return results
+				res.write(JSON.stringify({
+					orders : orders
+				}));
+				return res.end();
+			});
+
+		});
 	});
 };
 
@@ -269,6 +345,69 @@ findPartyPartnerId = function(aParties, sRole) {
 	return "";
 };
 
-module.exports.addRecord = addRecord;
-module.exports.getList = getList;
+getIncOrders = function(req, res) {
+
+	res.setHeader("Content-Type", "application/json");
+
+	// get partnerid's which can see user.
+	getUser(req, res).then(function(oUser) {
+		var aPartners = [];
+		if (oUser.partners) {
+			for (i = 0; i < oUser.partners.length; i++) {
+				aPartners.push(oUser.partners[i].partner.partnerid);
+			}
+		}
+
+		if (aPartners.length == 0)
+			return res.end();
+
+		ordersModel.find({
+			'parties.partnerid' : {
+				$in : aPartners
+			}
+		}).lean().exec(function(err, orders) {
+
+			if (err)
+				return res.end(err);
+
+			// add some fields into order
+
+			var pOrders = new Promise(function(resolve, reject) {
+				var aProm = [];
+				for (var s = 0; s < orders.length; s++) {
+					var oDoc = orders[s];
+
+					aProm.push(_getOrder(oDoc));
+
+				}
+
+				Promise.all(aProm).then(function(aDocs) {
+					resolve(orders);
+				});
+
+			});
+
+			pOrders.then(function(orders) {
+
+				// final corrections
+				for (d = 0; d < orders.length; d++) {
+					orders[d].approvable = true;
+				}
+
+				// return results
+				res.write(JSON.stringify({
+					orders : orders
+				}));
+				return res.end();
+			});
+
+		});
+
+	});
+
+};
+
+module.exports.maintainOrder = maintainOrder;
+module.exports.getOwnOrders = getOwnOrders;
+module.exports.getIncOrders = getIncOrders;
 module.exports.getOrderDetails = getOrderDetails;

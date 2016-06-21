@@ -48,9 +48,10 @@ router.get('/users', users.getList);
 router.post('/assignpartner', users.assignPartner); 
 
 
-router.get('/orders', orders.getList);
+router.get('/orders', orders.getOwnOrders);
 router.get('/orders/:id/', orders.getOrderDetails);
-router.post('/orders', orders.addRecord); 
+router.post('/orders', orders.maintainOrder);
+router.get('/incorders', orders.getIncOrders);
 
 
 

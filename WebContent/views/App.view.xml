@@ -76,7 +76,7 @@
 					<TileContainer>
 						<StandardTile id="tileIncomingOrders" title="Incoming orders"
 							info="sdf" icon="sap-icon://my-sales-order" number="12"
-							numberUnit="1" visible = "{access>/access/AR-ORD}" />
+							numberUnit="1" press="openIncomingOrders"  visible = "{access>/access/AR-ORD}" />
 
 						<StandardTile id="tileMyInvoices" title="My Invoices"
 							info="" icon="sap-icon://travel-expense-report" number="3"

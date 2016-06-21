@@ -91,23 +91,6 @@ sap.ui.controller("views.App", {
 
 					oOrders.setModel(new sap.ui.model.json.JSONModel(data));
 
-					// var oOrders = {};
-					// if (!oController.App.getPage("Orders")) {
-					// oOrders = sap.ui.view({
-					// id : "Orders",
-					// viewName : "views.Orders",
-					// type : sap.ui.core.mvc.ViewType.XML
-					// });
-					//
-					// oOrders.getController().AppController = oController;
-					// oController.App.addPage(oOrders);
-					// }
-					//
-					// oOrders = oController.App.getPage("Orders")
-					//
-					// oOrders.setModel(new sap.ui.model.json.JSONModel(data));
-					//
-					// oController.App.to("Orders");
 
 				}
 			},
@@ -116,16 +99,39 @@ sap.ui.controller("views.App", {
 			}
 		});
 
-		// var oModel = new sap.ui.model.json.JSONModel('/orders');
-
-		// var oModel = new sap.ui.model.json.JSONModel();
-		// oModel.loadData('/orders', "", true, "GET", false, false, {
-		// withCredentials: true,
-		// Authorization: sAuth
-		// });
-
 	},
+	openIncomingOrders: function(evt) {
 
+		
+		// Call REST async
+		var sAuth = window.sessionStorage.getItem('Auth');
+		var oController = this;
+
+		jQuery.ajax({
+			type : 'GET',
+			url : "/incorders",
+			headers : {
+				'Authorization' : sAuth
+			},
+			success : function(data, stat, xhdr) {
+				if (xhdr.status == '200') {
+
+					oController.navTo("Orders");
+
+					var oOrders = oController.App.getPage("Orders");
+
+					oOrders.setModel(new sap.ui.model.json.JSONModel(data));
+
+
+				}
+			},
+			error : function(data, stat, xhdr) {
+				alert("Access denied!");
+			}
+		});
+		
+	},
+	
 	openSettings : function(evt) {
 
 		this.navTo("Settings");

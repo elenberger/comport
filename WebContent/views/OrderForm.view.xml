@@ -151,11 +151,11 @@
 		</IconTabBar>
 
 		<semantic:positiveAction>
-			<semantic:PositiveAction text="Approve" />
+			<semantic:PositiveAction text="Approve" visible="{approvable}" />
 		</semantic:positiveAction>
 
 		<semantic:negativeAction>
-			<semantic:NegativeAction text="Reject" />
+			<semantic:NegativeAction text="Reject" visible="{approvable}"/>
 		</semantic:negativeAction>
 		<BusyDialog id="idBusyDialog" />
 	</semantic:DetailPage>
