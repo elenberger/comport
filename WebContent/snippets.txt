@@ -17,3 +17,7 @@
 				</f:SimpleForm>
 			</l:Grid>
 		</content>
+		
+		
+		editable= "{parts: [{path: '/orders/approvable'}, {path: 'approve'}], formatter: '.oFormatter.approveItemEnabled'}" 
+		

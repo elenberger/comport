@@ -42,21 +42,32 @@ var orders = new Schema({
     partnerid: String,
     num:  {type: String, required: true, maxlength: 20},
     date: String,
+    netamount: String,
+    vatamount: String,
+    currency:  String,
+    curr: String,
     stat: String,
     note: String,
+    crdate: {type: Date, default: Date.now},
     parties: [{role: {type: String}, partnerid: {type: String}}],
-    approval: [{stepno: {type: Number}, steptype: {type: String}, partnerid: {type: String}, approve: {type: Boolean}}]
+    approval: [{stepno: {type: Number}, steptype: {type: String}, partnerid: {type: String}, resdate: {type: Date}, note: {type: String}, approve: {type: Boolean}}]
 });
+
     
-var orderDetail = new Schema({
-      id: {type: String},
-			descr:{type: String},
-			dstart: {type: String},
-			dfinish: {type: String},
-			pos: [ {id: {type: String}, text: {type: String}, amount: {type: String}}	],
-parties: [{role: {type: String}, id: {type: String}, text: {type: String}}],
-approval: [{stepno: {type: Number}, steptype: {type: String}, role: {type: String}, partnerid: {type: String}, approve: {type: Boolean}}]
-  });
+var invoices = new Schema({
+    partnerid: String,
+    num:  {type: String, required: true, maxlength: 20},
+    date: String,
+    stat: String,
+    netamount: String,
+    vatamount: String,
+    currency:  String,
+    note: String,
+    crdate: {type: Date, default: Date.now},
+    order: { type: Schema.Types.ObjectId, ref: 'orders', required: true },
+    parties: [{role: {type: String}, partnerid: {type: String}}],
+    approval: [{stepno: {type: Number}, steptype: {type: String}, partnerid: {type: String}, resdate: {type: Date}, note: {type: String}, approve: {type: Boolean}}]
+});
 
 
 
@@ -73,9 +84,11 @@ var workflows = new Schema({
 var usersModel = mongoose.model('users', users);
 var partnersModel = mongoose.model('partners', partners);
 var ordersModel = mongoose.model('orders', orders);
+var invoicesModel = mongoose.model('invoices', invoices);
 var workflowsModel = mongoose.model('workflows', workflows);
 
 module.exports.usersModel = usersModel;
 module.exports.partnersModel = partnersModel;
 module.exports.ordersModel = ordersModel;
+module.exports.invoicesModel = invoicesModel;
 module.exports.workflowsModel = workflowsModel;

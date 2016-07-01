@@ -3,6 +3,7 @@ var router = express.Router();
 var path = require('path');
 var auth = require('./auth');
 var orders = require('./orders');
+var invoices = require('./invoices');
 var users = require('./users');
 var partners = require('./partners');
 
@@ -53,6 +54,8 @@ router.get('/orders/:id/', orders.getOrderDetails);
 router.post('/orders', orders.maintainOrder);
 router.get('/incorders', orders.getIncOrders);
 
+router.get('/invoices', invoices.getOwnInvoices);
+router.post('/invoices', invoices.maintainInvoice);
 
 
 

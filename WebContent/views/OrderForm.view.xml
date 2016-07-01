@@ -3,7 +3,7 @@
 	xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form" controllerName="views.OrderForm"
 	xmlns:html="http://www.w3.org/1999/xhtml">
 	<semantic:DetailPage id="idOrderForm" title="Order {num}"
-		showNavButton="true"  navButtonPress="onNavBack" >
+		showNavButton="true" navButtonPress="onNavBack">
 
 		<semantic:customHeaderContent>
 			<Button icon="sap-icon://home" press="onNavHome" />
@@ -22,13 +22,13 @@
 							<Text text="{num}" />
 							<Label text="Date" />
 							<Text text="{date}" />
-                            <Label text="Owner" />
-                            <Text text="{partnerid} {partnername}" />
+							<Label text="Owner" />
+							<Text text="{partnerid} {partnername}" />
 							<Label text="Status" />
 							<Text text="{stat}" />
 							<Label text="Description" />
 							<Text text="{note}" />
-     					</f:SimpleForm>
+						</f:SimpleForm>
 
 						<Table class="sapUiSizeCompact" headerText="Partners" xmlns="sap.m"
 							id="idTabPartners" items="{path: 'parties'}">
@@ -126,36 +126,49 @@
 
 				<IconTabFilter icon="sap-icon://approvals" id="idApproval"
 					text="Approval details" key="approval">
-					<List headerText="Approval details" items="{path: 'approval'}">
-						<CustomListItem>
-							<HBox>
-								<core:Icon size="2rem"
-									src="{path: 'approve', formatter: '.formatApprovalIcon'}"
-									class="sapUiSmallMarginBegin sapUiSmallMarginTopBottom" />
-								<VBox class="sapUiSmallMarginBegin sapUiSmallMarginTopBottom">
-									<Label text="{stepno} " />
-									<Label text="{partnerid} {partnername}" />
-								</VBox>
-								<HBox width="100%" justifyContent="End" alignItems="Center">
-								    <Label text="Comment" />
-									<TextArea value="{note}" class="sapUiSmallMarginBegin" enabled="{approve}" editable="{approve}" />
 
-								</HBox>
-							</HBox>
+					<Table class="sapUiSizeCompact" headerText="Approval details"
+						xmlns="sap.m" id="idTabApprovals" items="{path: 'approval'}">
+						<items>
+							<ColumnListItem>
+								<cells>
+									<core:Icon size="2rem"   
+										src="{parts:[{path: 'approve'}, {path: 'steptype'}], formatter: '.formatApprovalIcon'}"/>
+									<Text text="{partnerid} {partnername}" />
+									<Text text="{path: 'resdate', formatter: '.oFormatter.formatTimestamp'}'" />
+									<Text text="{note}" />
+								</cells>
+							</ColumnListItem>
+						</items>
 
-						</CustomListItem>
-					</List>
+						<columns>
+							<Column width="10%">
+								<Label text="Step" />
+							</Column>
+							<Column >
+								<Label text="Approver" />
+							</Column>
+							<Column>
+								<Label text="Resolution date" />
+							</Column>
+							<Column>
+								<Label text="Comment" />
+							</Column>
+						</columns>
+					</Table>
 
 				</IconTabFilter>
 			</items>
 		</IconTabBar>
 
 		<semantic:positiveAction>
-			<semantic:PositiveAction text="Approve" visible="{approvable}" />
+			<semantic:PositiveAction text="Approve"
+				visible="{approvable}" press="approveOrder" />
 		</semantic:positiveAction>
 
 		<semantic:negativeAction>
-			<semantic:NegativeAction text="Reject" visible="{approvable}"/>
+			<semantic:NegativeAction text="Reject"
+				visible="{approvable}" press="rejectOrder" />
 		</semantic:negativeAction>
 		<BusyDialog id="idBusyDialog" />
 	</semantic:DetailPage>

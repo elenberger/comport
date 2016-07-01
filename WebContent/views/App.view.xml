@@ -12,7 +12,7 @@
 						<Input xmlns="sap.m" id="idUser" editable="true" />
 
 						<Label xmlns="sap.m" text="Password" />
-						<Input xmlns="sap.m" id="idPass" type="Password" editable="true" />
+						<Input xmlns="sap.m" id="idPass" type="Password" editable="true" submit="onLogin" />
 						<Button xmlns="sap.m" id="idLogin" text="Login" width="300px"
 							press="onLogin" />
 						<html:br />
@@ -58,7 +58,7 @@
 
 						<StandardTile id="tileIncomingInvoices" title="Incoming invoices"
 							info="" icon="sap-icon://sales-notification" number="555"
-							numberUnit="1" visible = "{access>/access/AP-INV}">
+							numberUnit="1" visible = "{access>/access/AP-INV}" press="openIncomingInvoices">
 						</StandardTile>
 					</TileContainer>
 
@@ -80,7 +80,7 @@
 
 						<StandardTile id="tileMyInvoices" title="My Invoices"
 							info="" icon="sap-icon://travel-expense-report" number="3"
-							numberUnit="0" visible = "{access>/access/AR-INV}" />
+							numberUnit="0" visible = "{access>/access/AR-INV}" press="openMyInvoices" />
 
 					</TileContainer>
 				</content>

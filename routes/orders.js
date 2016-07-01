@@ -5,49 +5,13 @@ var rest = require('./restcallwrapper');
 
 var getPartnerById = require('./partners').getPartnerById;
 var getUser = require('./users').getUser;
+var approveOrder = require('./approve').approveOrder;
 
 var mongoose = require('mongoose');
 var ValidationError = mongoose.Error.ValidationError;
 var ValidatorError = mongoose.Error.ValidatorError;
 
-testImport = function() {
 
-	// Временное добавление данных
-	var order1 = new ordersModel({
-		id : "1002",
-		descr : "1233",
-		dstart : "01.01.2016",
-		dfinish : "31.03.2016",
-		pos : [ {
-			"id" : "1",
-			"text" : "service1",
-			"amount" : 1334.34
-		}
-
-		, {
-			"id" : "2",
-			"text" : "service2",
-			"amount" : 150.01
-		} ],
-		parties : [ {
-			"role" : "vendor",
-			"id" : "1234567894",
-			"text" : " Aldomayer AG"
-		}
-
-		, {
-			"role" : "billto",
-			"id" : "1234567895",
-			"text" : " Schweriner moebel GmbH"
-		} ]
-
-	});
-
-	// console.log("save");
-	order1.save(function(err) {
-	});
-
-};
 
 // Route order operation(C-Create, U-update, D-Delete, A-Approve, R-Reject )
 
@@ -62,9 +26,9 @@ maintainOrder = function(req, res) {
 	}
 
 	if (!sOper || !sOrdernum || !sPartnerid) {
-		var err = new Error('Wrong message format');
-		err.status = 500;
-		return res.end(err);
+		return res.status(500).send({
+			"error" : "Wrong message format"
+		});
 	}
 
 	// find order and check status.
@@ -77,38 +41,41 @@ maintainOrder = function(req, res) {
 
 		case "C":
 			if (order) {
-				var err = new Error('Order exists! ');
-				err.status = 500;
-				return res.end(err);
+				return res.status(500).send({
+					"error" : "Order exists!"
+				});
 			}
-			
-			addRecord(req.body.order);
-			
+
+			addRecord(req.body.order, res);
+
 			break;
 		case "U":
-			//remove old order and create new
+			// remove old order and create new
 			if (order) {
-				order.remove(function(err,removed) {});
-				}
-			addRecord(req.body.order);
-			
+				order.remove(function(err, removed) {
+				});
+			}
+			addRecord(req.body.order, res);
+
 			break;
 		case "D":
 			if (order) {
-			order.remove(function(err,removed) {
-				res.end();
-			});
+				order.remove(function(err, removed) {
+					res.end();
+				});
+			} else {
+				res.send({
+					"error" : "Order doesn't exists"
+				});
 			}
 			break;
 		case "A":
 		case "R":
-
+            approveOrder(req, res, order); 
 			break;
 
 		default:
-			var err = new Error('Wrong message format');
-			err.status = 500;
-			return res.end(err);
+			return res.status(500).send({"error": "Wrong message format"});
 
 		}
 
@@ -116,7 +83,7 @@ maintainOrder = function(req, res) {
 
 };
 
-addRecord = function(oOrder) {
+addRecord = function(oOrder, res) {
 
 	ordersModel.schema.pre('save', function(next) {
 		if (this.num.length > 10) {
@@ -143,7 +110,9 @@ addRecord = function(oOrder) {
 
 					var aSteps = workflow.steps;
 
-					for (i = 0; i < aSteps.length; i++) {
+					oOrder.approval.length = 0;
+
+					for (var i = 0; i < aSteps.length; i++) {
 						var oOrderWorkflowStep = {};
 
 						oOrderWorkflowStep.stepno = i + 1;
@@ -157,6 +126,14 @@ addRecord = function(oOrder) {
 
 						oOrder.approval.push(oOrderWorkflowStep);
 					}
+
+					// Last step is notification to order owner
+					var oOrderWorkflowStep = {
+						stepno : i + 1,
+						steptype : "N",
+						partnerid : oOrder.partnerid
+					};
+					oOrder.approval.push(oOrderWorkflowStep);
 
 					next();
 				});
@@ -245,7 +222,12 @@ _getOrder = function(oOrder) {
 
 			_getOrderParties(oOrder.parties).then(function(aParties) {
 				oOrder.parties = aParties;
-				resolve(oOrder);
+
+				_getOrderApprovals(oOrder.approval).then(function(aApprovals) {
+					oOrder.approval = aApprovals;
+					resolve(oOrder);
+				});
+
 			});
 		});
 	});
@@ -276,6 +258,51 @@ _getOrderParties = function(aParties) {
 	});
 };
 
+// process approval array
+_getOrderApprovals = function(aApprovals) {
+
+	return new Promise(function(resolve, reject) {
+
+		var aStepProm = [];
+		var bActiveStepFound = false;
+		
+		for (var a = 0; a < aApprovals.length; a++) {
+
+			var oStepProm = new Promise(function(resolve, reject) {
+				var oApprovalStep = aApprovals[a];
+				getPartnerById(oApprovalStep.partnerid).then(function(oPartner) {
+										
+					oApprovalStep.partnername = oPartner.partnername;
+				
+//					if (oApprovalStep.steptype == 'A') {
+//						oApprovalStep.steptype = 'Approval by: ';
+//					} else if (oApprovalStep.steptype == 'N') {
+//						oApprovalStep.steptype = 'Notification to: ';
+//					}
+										 
+					oApprovalStep.approve = false;
+					
+					if (!oApprovalStep.resdate && !bActiveStepFound) {
+						oApprovalStep.approve = bActiveStepFound =  true;
+						
+					}
+					
+					
+					resolve(oApprovalStep);
+					}); 
+					});
+			
+			aStepProm.push(oStepProm);
+
+		}
+
+		Promise.all(aStepProm).then(function(oApprovalSteps) {
+			resolve(oApprovalSteps);
+		});
+
+	});
+};
+
 // Order from remote system
 getOrderDetails = function(req, res) {
 
@@ -301,37 +328,6 @@ getOrderDetails = function(req, res) {
 
 	});
 
-	//    
-	// //req.params.id
-	// res.setHeader("Content-Type", "application/json");
-	//    
-	// var orderDetails = {
-	// num: "4508937483", //string(10)
-	// date: "2016-05-25", // date a string YYYY-MM-DD
-	// note: "Our order", //String
-	// netamout: 5000, //currency
-	// vatamout: 1000,
-	// positions: [{posid: 0,
-	// postxt: "",
-	// deliverydate: "",
-	// quntity: 0,
-	// price: 0,
-	// netamout: 0,
-	// vatamout: 0}],
-	// parties: [{posid: 0,
-	// partnerid: "",
-	// role: "" //for PO will be Vendoe, for SO will be customer
-	// } ]
-	// };
-	//    
-	// var Details1 = orderDetails;
-	//
-	// res.write(JSON.stringify({
-	// orderDetails: Details1
-	// }));
-	//        
-	//
-	// return res.end();
 
 };
 
@@ -389,9 +385,26 @@ getIncOrders = function(req, res) {
 
 			pOrders.then(function(orders) {
 
-				// final corrections
-				for (d = 0; d < orders.length; d++) {
-					orders[d].approvable = true;
+				// final corrections, calculate if document approvable
+				for (var d = 0; d < orders.length; d++) {
+					var oOrder = orders[d];
+					oOrder.approvable = false;
+					
+					var oRes = oOrder.approval.find(function(oApprovalStep){
+						if (oApprovalStep.approve) {return oApprovalStep}
+					});
+					
+					if (oRes) {
+						var sPartnerid = aPartners.find(function(sPartnerid){
+							if (sPartnerid==oRes.partnerid) {
+								return sPartnerid; 
+							} 
+						});
+						if (sPartnerid) {
+							oOrder.approvable = true;
+						}
+					}
+					
 				}
 
 				// return results
@@ -406,6 +419,10 @@ getIncOrders = function(req, res) {
 	});
 
 };
+
+orderApprove = function(sAction, oOrder) {
+	// {operation, order:{partnerid num note}}
+}
 
 module.exports.maintainOrder = maintainOrder;
 module.exports.getOwnOrders = getOwnOrders;

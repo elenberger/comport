@@ -16,18 +16,44 @@ getList = function(req, res) {
 		return res.end();
 
 	});
-},
+};
 
 getPartnerById = function(sPartner) {
 
-	return new Promise(function(resolve,reject) {
-		partnersModel.findOne({partnerid : sPartner}).lean().exec(
-				function(err, partner) {
-		             resolve(partner);
-	}) 
+	return new Promise(function(resolve, reject) {
+		partnersModel.findOne({
+			partnerid : sPartner
+		}).lean().exec(function(err, partner) {
+			resolve(partner);
+		})
 	});
 
-}
+};
 
- module.exports.getPartnerById = getPartnerById;
-module.exports.getList = getList;
+getDocParties = function(aParties) {
+
+	return new Promise(function(resolve, reject) {
+
+		var aPromises = [];
+
+		for (var p = 0; p < aParties.length; p++) {
+			var oParty = aParties[p];
+
+			aPromises.push(getPartnerById(oParty.partnerid).then(
+					function(oPartner) {
+						oParty.partnername = oPartner.partnername;
+					}));
+
+		}
+
+		Promise.all(aPromises).then(function(aObjects) {
+			resolve(aParties);
+		});
+
+	});
+};
+
+
+module.exports.getPartnerById = getPartnerById;
+module.exports.getDocParties  = getDocParties;
+module.exports.getList        = getList;
