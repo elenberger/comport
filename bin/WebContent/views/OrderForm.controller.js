@@ -43,7 +43,6 @@ sap.ui.controller("views.OrderForm", {
 			// var oContext = oView.byId("Form1").getBindingContext();
 			var oContext = oView.getBindingContext();
 			var sNum = oContext.getModel().getProperty(oContext.getPath()).num;
-			var sPartnerid = oContext.getModel().getProperty(oContext.getPath()).partnerid;
 
 			var oTab = evt.getParameters().selectedItem;
 
@@ -54,7 +53,7 @@ sap.ui.controller("views.OrderForm", {
 
 			jQuery.ajax({
 				type : 'GET',
-				url : "/orders/" + sPartnerid+ "/"+ sNum,
+				url : "/orders/" + sNum,
 				headers : {
 					'Authorization' : sAuth
 				},
@@ -95,7 +94,6 @@ sap.ui.controller("views.OrderForm", {
         var oOrder = {
             num: oModel.getProperty("num", oContext),
             partnerid: oModel.getProperty("partnerid", oContext),
-            note:      this.getView().byId("approvalComment").getValue()
             }; 
         var oObj = {
             operation: sAction,

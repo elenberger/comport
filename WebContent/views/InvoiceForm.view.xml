@@ -3,7 +3,7 @@
 	xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form" controllerName="views.InvoiceForm"
 	xmlns:html="http://www.w3.org/1999/xhtml">
 	<semantic:DetailPage id="idOrderForm" title="Invoice {num}"
-		showNavButton="true"  navButtonPress="onNavBack" >
+		class="sapUiSizeCompact" showNavButton="true" navButtonPress="onNavBack">
 
 		<semantic:customHeaderContent>
 			<Button icon="sap-icon://home" press="onNavHome" />
@@ -12,23 +12,69 @@
 		<IconTabBar stretchContentHeight="true" select="onTabSelect">
 			<items>
 				<IconTabFilter icon="sap-icon://header" id="idOverview"
-					text="Overview" key="overview">
+					class="sapUiSmallMargin" text="Overview" key="overview">
 					<content>
-						<f:SimpleForm minWidth="1024" width="" editable="false"
-							labelMinWidth="192" layout="ResponsiveGridLayout" labelSpanL="3"
-							labelSpanM="3" emptySpanL="4" emptySpanM="4" columnsL="2"
-							columnsM="2">
-							<Label text="Number" />
-							<Text text="{num}" />
-							<Label text="Date" />
-							<Text text="{date}" />
-                            <Label text="Owner" />
-                            <Text text="{partnerid} {partnername}" />
-							<Label text="Status" />
-							<Text text="{stat}" />
-							<Label text="Description" />
-							<Text text="{note}" />
-     					</f:SimpleForm>
+
+						<Panel headerText="Header" expandable="false" expanded="true">
+							<HBox class="sapUiSmallMargin">
+								<VBox class="sapUiSmallMargin" justifyContent="Start">
+									<HBox>
+										<Label text="Number:" class="sapUiSmallMarginEnd" width="100px" />
+										<Text text="{num}" />
+									</HBox>
+
+									<HBox>
+
+										<Label text="Date:" class="sapUiSmallMarginEnd" width="100px" />
+										<Text text="{date}" />
+
+									</HBox>
+									<HBox>
+
+										<Label text="Owner:" class="sapUiSmallMarginEnd" width="100px" />
+										<Text text="{partnername}" />
+
+
+									</HBox>
+									<HBox>
+										<Label text="Status:" class="sapUiSmallMarginEnd" width="100px" />
+										<Text text="{stat}" />
+									</HBox>
+									<VBox>
+										<Button id="sendExt" press="sendExtSys" text="send to Ext System"
+											visible="{path: 'stat', formatter: '.oFormatter.displaysendExt'}" />
+									</VBox>
+
+								</VBox>
+								<VBox justifyContent="Start" class="sapUiSmallMargin">
+									<HBox>
+										<Label text="Currency: " class="sapUiSmallMarginEnd"
+											width="100px" />
+										<Text text="{currency}" />
+									</HBox>
+									<HBox>
+										<Label text="Net amount:" class="sapUiSmallMarginEnd"
+											width="100px" />
+										<Text text="{netamount}" />
+									</HBox>
+									<HBox>
+										<Label text="VAT amount: " class="sapUiSmallMarginEnd"
+											width="100px" />
+										<Text text="{vatamount}" description="{currency}" />
+									</HBox>
+									<HBox>
+										<Label text="Description: " class="sapUiSmallMarginEnd"
+											width="100px" />
+										<Text text="{note}" />
+									</HBox>
+									<HBox>
+										<Label text="Order Number: " class="sapUiSmallMarginEnd"
+											width="100px" />
+										<Text text="{order/num}" />
+									</HBox>
+								</VBox>
+							</HBox>
+						</Panel>
 
 						<Table class="sapUiSizeCompact" headerText="Partners" xmlns="sap.m"
 							id="idTabPartners" items="{path: 'parties'}">
@@ -72,9 +118,10 @@
 							<Text text="{date}" />
 							<Label text="Note" />
 							<Text text="{note}" />
+							<Label text="Currency" />
+							<Text text="{currency}" />
 							<Label text="Net amount" />
 							<Text text="{netamount}" />
-
 							<Label text="VAT amount" />
 							<Text text="{vatamount}" />
 
@@ -87,7 +134,6 @@
 									<cells>
 										<Text text="{posid}" />
 										<Text text="{postxt}" />
-										<Text text="{deliverydate}" />
 										<Text text="{quantity}" />
 										<Text text="{price}" />
 										<Text text="{netamount}" />
@@ -102,9 +148,6 @@
 								</Column>
 								<Column id="IdDescr" width="200px">
 									<Label text="Description" />
-								</Column>
-								<Column id="DelDate">
-									<Label text="Delivery date" />
 								</Column>
 								<Column id="idQuantity">
 									<Label text="Quantity" />
@@ -126,36 +169,60 @@
 
 				<IconTabFilter icon="sap-icon://approvals" id="idApproval"
 					text="Approval details" key="approval">
-					<List headerText="Approval details" items="{path: 'approval'}">
-						<CustomListItem>
-							<HBox>
-								<core:Icon size="2rem"
-									src="{path: 'approve', formatter: '.formatApprovalIcon'}"
-									class="sapUiSmallMarginBegin sapUiSmallMarginTopBottom" />
-								<VBox class="sapUiSmallMarginBegin sapUiSmallMarginTopBottom">
-									<Label text="{stepno} " />
-									<Label text="{partnerid} {partnername}" />
-								</VBox>
-								<HBox width="100%" justifyContent="End" alignItems="Center">
-								    <Label text="Comment" />
-									<TextArea value="{note}" class="sapUiSmallMarginBegin" enabled="{approve}" editable="{approve}" />
+					<Table class="sapUiSizeCompact" headerText="Approval details"
+						xmlns="sap.m" id="idTabApprovals" items="{path: 'approval'}">
+						<items>
+							<ColumnListItem>
+								<cells>
+									<core:Icon size="2rem"
+										src="{parts:[{path: 'approve'}, {path: 'steptype'}], formatter: '.formatApprovalIcon'}" />
+									<Text text="{partnerid} {partnername}" />
+									<Text
+										text="{path: 'resdate', formatter: '.oFormatter.formatTimestamp'}'" />
+									<Text text="{resolver}" />
+									<Text text="{note}" />
+								</cells>
+							</ColumnListItem>
+						</items>
 
-								</HBox>
-							</HBox>
+						<columns>
+							<Column width="10%">
+								<Label text="Step" />
+							</Column>
+							<Column>
+								<Label text="Approver" />
+							</Column>
+							<Column>
+								<Label text="Resolution date" />
+							</Column>
+							<Column>
+								<Label text="Resolver" />
+							</Column>
+							<Column>
+								<Label text="Comment" />
+							</Column>
+						</columns>
+					</Table>
 
-						</CustomListItem>
-					</List>
-
+					<HBox visible="{approvable}" justifyContent="End" alignItems="Center">
+						<items>
+							<Text class="sapUiSmallMargin" text="Approval comment" />
+							<TextArea class="sapUiSmallMargin" id="approvalComment"
+								width="200px" />
+						</items>
+					</HBox>
 				</IconTabFilter>
 			</items>
 		</IconTabBar>
 
 		<semantic:positiveAction>
-			<semantic:PositiveAction text="Approve" />
+			<semantic:PositiveAction visible="{approvable}"
+				text="Approve" press="approveInvoice" />
 		</semantic:positiveAction>
 
 		<semantic:negativeAction>
-			<semantic:NegativeAction text="Reject" />
+			<semantic:NegativeAction visible="{approvable}"
+				text="Reject" press="rejectInvoice" />
 		</semantic:negativeAction>
 		<BusyDialog id="idBusyDialog" />
 	</semantic:DetailPage>

@@ -1,5 +1,3 @@
-
-
 var invoicesModel = require('./dbwrapper').invoicesModel;
 var ordersModel = require('./dbwrapper').ordersModel;
 var workflowsModel = require('./dbwrapper').workflowsModel;
@@ -31,13 +29,8 @@ maintainInvoice = function(req, res) {
 	// find invoice and check status.
 	invoicesModel.findOne({
 		partnerid : sPartnerid,
-		num : sInvoicenum
+		num : sOrder
 	}).exec(function(err, invoice) {
-
-		if (err)
-			return res.status(500).send({
-				"error" : "Error while creating invoice"
-			});
 
 		switch (sOper) {
 
@@ -48,7 +41,7 @@ maintainInvoice = function(req, res) {
 				});
 			}
 
-			addInvoice(req.body.invoice, res);
+			addRecord(req.body.invoice, res);
 
 			break;
 		case "U":
@@ -58,7 +51,7 @@ maintainInvoice = function(req, res) {
 				invoice.remove(function(err, removed) {
 				});
 			}
-			addInvoice(req.body.invoice, res);
+			addRecord(req.body.invoice, res);
 
 			break;
 		case "D":
@@ -74,11 +67,9 @@ maintainInvoice = function(req, res) {
 			break;
 		case "A":
 		case "R":
-			mApprove.approveInvoice(req, res, invoice);
+			approveInvoice(req, res, order);
 			break;
-		case "X":
-			sendInvoiceExt(req, res);
-			break;
+
 		default:
 			return res.status(500).send({
 				"error" : "Wrong message format"
@@ -99,7 +90,7 @@ findPartyPartnerId = function(aParties, sRole) {
 	return "";
 };
 
-addInvoice = function(oInvoice, res) {
+addRecord = function(oInvoice, res) {
 
 	// logic before save
 
@@ -146,7 +137,7 @@ addInvoice = function(oInvoice, res) {
 					}
 
 					// Last step is notification to Invoice owner
-					var oInvoiceWorkflowStep = {
+					var oOrderWorkflowStep = {
 						stepno : i + 1,
 						steptype : "N",
 						partnerid : oInvoice.partnerid
@@ -168,7 +159,7 @@ addInvoice = function(oInvoice, res) {
 	});
 
 	if (!oBilltoParty)
-		return res.status(500).send({
+		res.status(500).send({
 			"error" : "Bill-to party is not determined"
 		});
 
@@ -182,8 +173,8 @@ addInvoice = function(oInvoice, res) {
 		num : sOrdernum
 	}).exec(function(err, order) {
 
-		if (err || !order)
-			return res.status(500).send({
+		if (err)
+			res.status(500).send({
 				"error" : "Reference order not found"
 			});
 
@@ -207,7 +198,7 @@ getOwnInvoices = function(req, res) {
 	res.setHeader("Content-Type", "application/json");
 
 	// get partnerid's which can see user.
-	getUser(req).then(function(oUser) {
+	getUser(req, res).then(function(oUser) {
 		var aPartners = [];
 		if (oUser.partners) {
 			for (i = 0; i < oUser.partners.length; i++) {
@@ -222,7 +213,7 @@ getOwnInvoices = function(req, res) {
 			partnerid : {
 				$in : aPartners
 			}
-		}).populate('order').lean().exec(function(err, invoices) {
+		}).lean().exec(function(err, invoices) {
 
 			if (err)
 				return res.status(500).send(err);
@@ -254,7 +245,7 @@ getOwnInvoices = function(req, res) {
 
 				// return results
 				res.write(JSON.stringify({
-					docs : invoices
+					invoices : invoices
 				}));
 				return res.end();
 			});
@@ -263,82 +254,8 @@ getOwnInvoices = function(req, res) {
 	});
 };
 
-getIncInvoices = function(req, res) {
-
-	res.setHeader("Content-Type", "application/json");
-
-	// get partnerid's which can see user.
-	getUser(req).then(function(oUser) {
-		var aPartners = [];
-		if (oUser.partners) {
-			for (i = 0; i < oUser.partners.length; i++) {
-				aPartners.push(oUser.partners[i].partner.partnerid);
-			}
-		}
-
-		if (aPartners.length == 0)
-			return res.status(200).send({});
-
-		invoicesModel.find({
-			'parties.partnerid' : {
-				$in : aPartners
-			}
-		}).populate('order').lean().exec(function(err, invoices) {
-
-			if (err)
-				return res.status(500).send({
-					"error" : "Error while reading invoices"
-				});
-
-			// add some fields into invoice
-
-			var aProm = [];
-			for (var s = 0; s < invoices.length; s++) {
-				var oDoc = invoices[s];
-
-				aProm.push(_getInvoice(oDoc));
-
-			}
-
-			// final corrections, calculate if document approvable
-
-			Promise.all(aProm).then(function(invoices) {
-
-				for (var d = 0; d < invoices.length; d++) {
-					var oInvoice = invoices[d];
-					oInvoice.approvable = false;
-
-					var oRes = oInvoice.approval.find(function(oApprovalStep) {
-						if (oApprovalStep.approve) {
-							return oApprovalStep
-						}
-					});
-
-					if (oRes) {
-						var sPartnerid = aPartners.find(function(sPartnerid) {
-							if (sPartnerid == oRes.partnerid) {
-								return sPartnerid;
-							}
-						});
-						if (sPartnerid) {
-							oInvoice.approvable = true;
-						}
-					}
-
-				}
-
-				// return results
-				res.write(JSON.stringify({
-					docs : invoices
-				}));
-				return res.end();
-			});
-
-		});
-	});
-
+getIncInvoices = function() {
 };
-
 getInvoiceDetails = function() {
 };
 
@@ -372,180 +289,6 @@ _getInvoice = function(oInvoice) {
 		});
 
 	});
-};
-
-getInvoiceDetails = function(req, res) {
-
-	// Object to retrieve and push Invoice details
-	res.setHeader("Content-Type", "application/json");
-
-	var sId = req.params.id;
-
-	rest.performGetRequest("/sap/bc/rest/z_comport/inv/" + sId, "",
-	// success
-	function(bkndres) {
-
-		res.write(JSON.stringify({
-			invoiceDetails : bkndres
-		}));
-
-		return res.end();
-
-	},
-	// on error
-	function(error) {
-		return res.status(500).send({
-			"error" : "Error while requesting data from backend"
-		});
-
-	});
-
-};
-
-// Return invoice from external system
-getInvoiceDetails = function(req, res) {
-
-	// Object to retrieve and push Invoice details
-	res.setHeader("Content-Type", "application/json");
-
-	var sId = req.params.num;
-	getInvoiceExtSys(sId).then(function(oInvoice) {
-
-		return res.status(200).send(JSON.stringify({
-			invoiceDetails : oInvoice
-		}));
-	}, function(err) {
-		return res.status(500).send({
-			"error" : "Error while requesting data from backend"
-		});
-	});
-
-};
-
-// Get InvoiceDetailsExt with all details from external system
-getInvoiceExtSys = function(sId) {
-
-	return new Promise(function(resolve, reject) {
-
-		rest.performGetRequest("/sap/bc/rest/z_comport/invoices/" + sId, "",
-		// success
-		function(bkndres) {
-			resolve(bkndres);
-		},
-		// on error
-		function(error) {
-			reject(error);
-		});
-	});
-
-};
-
-// Send Invoice to external system
-sendInvoiceExt = function(req, res) {
-	
-	"use strict";
-	
-	// at first get invoice from remote system(we require it as have no position
-	// in comport)
-
-	var oParams = {
-		num : req.body.invoice.num,
-		partnerid : req.body.invoice.partnerid
-	};
-
-	getInvoiceExtSys(oParams.num).then(
-	// Success
-	function(oInvoice) {
-
-		// map properties
-
-		var oObject = {};
-
-		oObject.partnerid = oInvoice.partnerid;
-		oObject.invdate   = oInvoice.date;
-// oObject.invnum = oInvoice.num;
-		oObject.currency    = oInvoice.currency;
-		oObject.invnote   = oInvoice.num + " " + oInvoice.node;
-		oObject.refnum    = oInvoice.order;
-
-		oObject.positions = [];
-		
-		for (var j = 0; j < oInvoice.positions.length; j++) {
-			oObject.positions.push({
-				text : oInvoice.positions[j].postxt,
-				sum : oInvoice.positions[j].netamount
-			});
-		}
-
-		// send to RECEIVER
-
-		rest.performPostRequestSAP("/sap/bc/rest/z_comport/incinvoices", oObject,
-		// success
-		function(oResponse) {
-           
-			var oUpdate = { 
-					stat: "Sent",
-					lastMsg: "",
-					partnerid: oInvoice.partnerid,
-					num: oInvoice.num
-					};
-			
-			for (let oMsg of oResponse.response) {
-				if (oMsg.type = 'E'){ 
-					oUpdate.stat = 'Error';
-				     oUpdate.lastMsg = oMsg.message;
-				     break;
-				}
-			}
-
-			// Update Invoice Status async
-			updateInvoiceStatus(oUpdate);
-
-			return res.status(200).send(JSON.stringify(oUpdate));
-			
-
-		},
-		// on error Receiver
-		function(error) {
-
-			// Update Invoice Status
-			var oUpdate = {stat: "Error",
-					       lastMsg: "Server error",
-					       partnerid: oInvoice.partnerid,
-					       num:       oInvoice.num
-			}
-			updateInvoiceStatus(oUpdate);
-
-			return res.status(500).send(error);
-
-		});
-
-	},
-	// Reject ->invoice is not received from Sender
-	function(err) {
-		return res.status(500).send({
-			"error" : "Error while requesting data from backend"
-		});
-	});
-
-};
-
-updateInvoiceStatus = function(oUpdate) {
-	var oInvObjectNew = {
-		  stat: oUpdate.stat,
-		  lasterr: oUpdate.lastMsg
-	
-	};
-	
-	invoicesModel.findOneAndUpdate(
-			{partnerid: oUpdate.partnerid,
-				   num: oUpdate.num},			
-			oInvObjectNew,
-			{new: true},
-	function(err, oUpdInvoice) {
-		// TODO: check if invoice was updated
-			}		
-	);
 };
 
 module.exports.maintainInvoice = maintainInvoice;

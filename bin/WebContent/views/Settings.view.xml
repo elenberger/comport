@@ -10,34 +10,23 @@
 			<IconTabBar stretchContentHeight="true">
 				<items>
 					<IconTabFilter icon="sap-icon://employee" id="tabUsers"
-						text="Users" key="users" visible="{access>/access/ADMINISTRATOR}">
+						text="Users" key="users">
 						<content>
 							<SplitContainer initialDetail="pageUsersDetails"
 								initialMaster="pageUsersList">
 								<masterPages>
-									<Page id="pageUsersList">
-										<headerContent>
-											<SearchField id="searchUserField" search="onSearchUser"
-												width="auto" />
-										</headerContent>
-
+									<Page id="pageUsersList" showHeader="false">
+										<SearchField id="searchUserField" search="onSearchUser"
+											width="auto" />
 										<List items="{path: '/users'}">
 											<StandardListItem title="{userid}"
 												description="{name}" type="Active" press="onUserDetails" />
 										</List>
-										<footer>
-											<Toolbar>
-												<ToolbarSpacer />
-												<Button icon="sap-icon://add" press="onAddUser" />
-												<Button icon="sap-icon://edit" press="onUpdateUser" />
-												<Button icon="sap-icon://delete" press="onDeleteUser" />
-											</Toolbar>
-										</footer>
 									</Page>
 								</masterPages>
 
 								<detailPages>
-									<Page id="pageUsersDetails">
+									<Page id="pageUsersDetails" showHeader="false">
 
 										<IconTabBar stretchContentHeight="true">
 											<items>
@@ -45,18 +34,20 @@
 													<content>
 														<f:SimpleForm editable="false">
 															<Label text="UserID" />
-															<Input id='inpu_userid' enabled="false" value="{userid}" />
+															<Input value="{userid}" />
 															<Label text="Name" />
-															<Input id='inpu_name' enabled="false" value="{name}" />
+															<Input value="{name}" />
 															<Label text="Address" />
-															<Input id='inpu_address' enabled="false" value="{address}" />
+															<Input value="{address}" />
 															<Label text="Email" />
-															<Input id='inpu_email' enabled="false" value="{email}" />
+															<Input value="{email}" />
 															<Label text="Comment" />
-															<Input id='inpu_comment' enabled="false" value="{comment}" />
+															<Input value="{comment}" />
+															<Label text="Admin" />
+															<CheckBox selected="sadm" />
 															<html:BR />
 															<Label text="Roles" />
-															<MultiComboBox id="rolesInput" enabled="false"
+															<MultiComboBox id="rolesInput"
 																selectedKeys="{roles}">
 																<items>
 																	<core:Item text="Administrator" key="ADMINISTRATOR" />
@@ -72,13 +63,8 @@
 
 												<IconTabFilter text="Partners" class="sapUiSmallMargin">
 													<content>
-														<Table id="tableUserPartners" mode="SingleSelectMaster" items="{path: 'partners'}">
-															<headerToolbar>
-																<Toolbar id="toolbarPartnerAssignment" visible="false">
-																	<Button icon="sap-icon://add" press="onAddPartnerAssignment" />
-																	<Button icon="sap-icon://delete" press="onRemovePartnerAssignment" />
-																</Toolbar>
-															</headerToolbar>
+														<Table id="tableUserPartners" headerText="User assignments"
+															items="{path: 'partners'}">
 															<columns>
 																<Column id="colPartner">
 																	<Label text="Partner ID" />
@@ -106,15 +92,6 @@
 												</IconTabFilter>
 											</items>
 										</IconTabBar>
-										<footer>
-											<Toolbar>
-												<ToolbarSpacer />
-												<HBox id="toolbarUserModify" visible="false">
-													<Button icon="sap-icon://save" press="onSaveUser" />
-													<Button icon="sap-icon://decline" press="onDeclineUser" />
-												</HBox>
-											</Toolbar>
-										</footer>
 
 									</Page>
 								</detailPages>
@@ -125,33 +102,21 @@
 					<IconTabFilter icon="sap-icon://collaborate" id="tabPartners"
 						text="Partners" key="partners">
 						<content>
-							<SplitContainer initialDetail="pagePartnersDetails"
+<SplitContainer initialDetail="pagePartnersDetails"
 								initialMaster="pagePartnersList">
 								<masterPages>
-									<Page id="pagePartnersList">
-										<headerContent>
-											<SearchField id="searchPartnerField" search="onSearchPartner"
-												width="auto" />
-										</headerContent>
-
-										<List items="{path: '/partners'}" growingScrollToLoad="true">
-
+									<Page id="pagePartnersList" showHeader="false">
+										<SearchField id="searchPartnerField" search="onSearchPartner"
+											width="auto" />
+										<List items="{path: '/partners'}">
 											<StandardListItem title="{partnerid}"
 												description="{partnername}" type="Active" press="onPartnerDetails" />
 										</List>
-										<footer>
-											<Toolbar>
-												<ToolbarSpacer />
-												<Button icon="sap-icon://add" press="onAddPartner" />
-												<Button icon="sap-icon://edit" press="onUpdatePartner" />
-												<Button icon="sap-icon://delete" press="onDeletePartner" />
-											</Toolbar>
-										</footer>
 									</Page>
 								</masterPages>
 
 								<detailPages>
-									<Page id="pagePartnersDetails">
+									<Page id="pagePartnersDetails" showHeader="false">
 
 										<IconTabBar stretchContentHeight="true">
 											<items>
@@ -159,19 +124,16 @@
 													<content>
 														<f:SimpleForm editable="false">
 															<Label text="ID" />
-															<Input id="inp_partnerid" value="{partnerid}"
-																enabled="false" />
-															<Label text="Name" enabled="false" />
-															<Input id="inp_partnername" value="{partnername}"
-																enabled="false" />
-															<Label text="Address" enabled="false" />
-															<Input id="inp_address" value="{address}" enabled="false" />
-															<Label text="Email" enabled="false" />
-															<Input id="inp_email" value="{email}" enabled="false" />
-															<Label text="Comment" enabled="false" />
-															<Input id="inp_comment" value="{comment}" enabled="false" />
+															<Input value="{partnerid}" />
+															<Label text="Name" />
+															<Input value="{partnername}" />
+															<Label text="Address" />
+															<Input value="{address}" />
+															<Label text="Email" />
+															<Input value="{email}" />
+															<Label text="Comment" />
+															<Input value="{comment}" />
 														</f:SimpleForm>
-
 													</content>
 												</IconTabFilter>
 
@@ -206,15 +168,6 @@
 												</IconTabFilter>
 											</items>
 										</IconTabBar>
-										<footer>
-											<Toolbar>
-												<ToolbarSpacer />
-												<HBox id="toolbarPartnerModify" visible="false">
-													<Button icon="sap-icon://save" press="onSavePartner" />
-													<Button icon="sap-icon://decline" press="onDeclinePartner" />
-												</HBox>
-											</Toolbar>
-										</footer>
 
 									</Page>
 								</detailPages>

@@ -4,7 +4,7 @@
 
 	<semantic:MasterPage id="idMasterPage" title="Orders"
 		showNavButton="true" navButtonPress="onNavBack">
-		<Table id="overviewTable" items="{path: 'docs'}">
+		<Table id="overviewTable" items="{path: '/orders'}">
 			<headerToolbar>
 				<Toolbar>
 					<ToolbarSpacer />
@@ -18,9 +18,6 @@
 				<Column id="colOwnerName" >
 				<Label text = "Owner"/>
 				</Column>
-				<Column id="colAmount" >
-				<Label text = "Net Amount/VAT"/>
-				</Column>
 				<Column id="colNoteStat" >
 				<Label text = "Info"/>
 				</Column>
@@ -31,7 +28,6 @@
 					<cells>
 						<ObjectIdentifier title="{num}" text="{date}" />
 						<ObjectIdentifier title="{partnerid}" text="{partnername}" />
-						<ObjectIdentifier title="{netamount} {currency}" text="{vatamount}" />
 						<ObjectIdentifier title="{stat}" text="{note}" />
 
 					</cells>

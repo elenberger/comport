@@ -3,8 +3,6 @@ var workflowsModel = require('./dbwrapper').workflowsModel;
 
 var rest = require('./restcallwrapper');
 
-var emailer = require('./emailer');
-
 var getPartnerById = require('./partners').getPartnerById;
 var getUser = require('./users').getUser;
 var approveOrder = require('./approve').approveOrder;
@@ -12,6 +10,8 @@ var approveOrder = require('./approve').approveOrder;
 var mongoose = require('mongoose');
 var ValidationError = mongoose.Error.ValidationError;
 var ValidatorError = mongoose.Error.ValidatorError;
+
+
 
 // Route order operation(C-Create, U-update, D-Delete, A-Approve, R-Reject )
 
@@ -46,7 +46,7 @@ maintainOrder = function(req, res) {
 				});
 			}
 
-			addOrder(req.body.order, req, res);
+			addRecord(req.body.order, res);
 
 			break;
 		case "U":
@@ -55,7 +55,7 @@ maintainOrder = function(req, res) {
 				order.remove(function(err, removed) {
 				});
 			}
-			addOrder(req.body.order, req, res);
+			addRecord(req.body.order, res);
 
 			break;
 		case "D":
@@ -71,13 +71,11 @@ maintainOrder = function(req, res) {
 			break;
 		case "A":
 		case "R":
-			approveOrder(req, res, order);
+            approveOrder(req, res, order); 
 			break;
 
 		default:
-			return res.status(500).send({
-				"error" : "Wrong message format"
-			});
+			return res.status(500).send({"error": "Wrong message format"});
 
 		}
 
@@ -85,7 +83,7 @@ maintainOrder = function(req, res) {
 
 };
 
-addOrder = function(oOrder, req, res) {
+addRecord = function(oOrder, res) {
 
 	ordersModel.schema.pre('save', function(next) {
 		if (this.num.length > 10) {
@@ -105,11 +103,9 @@ addOrder = function(oOrder, req, res) {
 			wfid : "dummy"
 		}).lean().exec(
 				function(err, workflow) {
-					if (err || !workflow) {
+					if (err) {
 						console.log(err);
-						return res.end({
-							"error" : "No workflow template found"
-						});
+						return res.end(err);
 					}
 
 					var aSteps = workflow.steps;
@@ -126,14 +122,6 @@ addOrder = function(oOrder, req, res) {
 
 						if (i == 0) {
 							oOrderWorkflowStep.approve = true;
-
-							// data for email
-							var oMailParams = {
-								num : oOrder.num,
-								partnerid : oOrder.partnerid,
-								sendto : oOrderWorkflowStep.partnerid
-							}
-							emailer.sendOrderApproveMsg(req, oMailParams);
 						}
 
 						oOrder.approval.push(oOrderWorkflowStep);
@@ -170,7 +158,7 @@ getOwnOrders = function(req, res) {
 	res.setHeader("Content-Type", "application/json");
 
 	// get partnerid's which can see user.
-	getUser(req).then(function(oUser) {
+	getUser(req, res).then(function(oUser) {
 		var aPartners = [];
 		if (oUser.partners) {
 			for (i = 0; i < oUser.partners.length; i++) {
@@ -215,7 +203,9 @@ getOwnOrders = function(req, res) {
 				}
 
 				// return results
-				res.write(JSON.stringify({docs: orders}));
+				res.write(JSON.stringify({
+					orders : orders
+				}));
 				return res.end();
 			});
 
@@ -271,56 +261,46 @@ _getOrderParties = function(aParties) {
 // process approval array
 _getOrderApprovals = function(aApprovals) {
 
-	return new Promise(
-			function(resolve, reject) {
+	return new Promise(function(resolve, reject) {
 
-				var aStepProm = [];
-				var bActiveStepFound = false;
+		var aStepProm = [];
+		var bActiveStepFound = false;
+		
+		for (var a = 0; a < aApprovals.length; a++) {
 
-				for (var a = 0; a < aApprovals.length; a++) {
+			var oStepProm = new Promise(function(resolve, reject) {
+				var oApprovalStep = aApprovals[a];
+				getPartnerById(oApprovalStep.partnerid).then(function(oPartner) {
+										
+					oApprovalStep.partnername = oPartner.partnername;
+				
+//					if (oApprovalStep.steptype == 'A') {
+//						oApprovalStep.steptype = 'Approval by: ';
+//					} else if (oApprovalStep.steptype == 'N') {
+//						oApprovalStep.steptype = 'Notification to: ';
+//					}
+										 
+					oApprovalStep.approve = false;
+					
+					if (!oApprovalStep.resdate && !bActiveStepFound) {
+						oApprovalStep.approve = bActiveStepFound =  true;
+						
+					}
+					
+					
+					resolve(oApprovalStep);
+					}); 
+					});
+			
+			aStepProm.push(oStepProm);
 
-					var oStepProm = new Promise(
-							function(resolve, reject) {
-								var oApprovalStep = aApprovals[a];
-								getPartnerById(oApprovalStep.partnerid)
-										.then(
-												function(oPartner) {
+		}
 
-													oApprovalStep.partnername = oPartner.partnername;
+		Promise.all(aStepProm).then(function(oApprovalSteps) {
+			resolve(oApprovalSteps);
+		});
 
-													// if
-													// (oApprovalStep.steptype
-													// == 'A') {
-													// oApprovalStep.steptype =
-													// 'Approval by: ';
-													// } else if
-													// (oApprovalStep.steptype
-													// == 'N') {
-													// oApprovalStep.steptype =
-													// 'Notification to: ';
-													// }
-
-													oApprovalStep.approve = false;
-
-													if (!oApprovalStep.resdate
-															&& !bActiveStepFound) {
-														oApprovalStep.approve = bActiveStepFound = true;
-
-													}
-
-													resolve(oApprovalStep);
-												});
-							});
-
-					aStepProm.push(oStepProm);
-
-				}
-
-				Promise.all(aStepProm).then(function(oApprovalSteps) {
-					resolve(oApprovalSteps);
-				});
-
-			});
+	});
 };
 
 // Order from remote system
@@ -329,14 +309,14 @@ getOrderDetails = function(req, res) {
 	// Object to retrieve and push Order details
 	res.setHeader("Content-Type", "application/json");
 
-	var sId = req.params.num;
+	var sId = req.params.id;
 
 	rest.performGetRequest("/sap/bc/rest/z_comport/po/" + sId, "",
 	// success
 	function(bkndres) {
 
 		res.write(JSON.stringify({
-			orderDetails : bkndres.order
+			orderDetails : bkndres
 		}));
 
 		return res.end();
@@ -344,11 +324,10 @@ getOrderDetails = function(req, res) {
 	},
 	// on error
 	function(error) {
-		return res.status(500).send({
-			"error" : "Error while requesting data from backend"
-		});
+		return res.end(error);
 
 	});
+
 
 };
 
@@ -367,7 +346,7 @@ getIncOrders = function(req, res) {
 	res.setHeader("Content-Type", "application/json");
 
 	// get partnerid's which can see user.
-	getUser(req).then(function(oUser) {
+	getUser(req, res).then(function(oUser) {
 		var aPartners = [];
 		if (oUser.partners) {
 			for (i = 0; i < oUser.partners.length; i++) {
@@ -410,28 +389,28 @@ getIncOrders = function(req, res) {
 				for (var d = 0; d < orders.length; d++) {
 					var oOrder = orders[d];
 					oOrder.approvable = false;
-
-					var oRes = oOrder.approval.find(function(oApprovalStep) {
-						if (oApprovalStep.approve) {
-							return oApprovalStep
-						}
+					
+					var oRes = oOrder.approval.find(function(oApprovalStep){
+						if (oApprovalStep.approve) {return oApprovalStep}
 					});
-
+					
 					if (oRes) {
-						var sPartnerid = aPartners.find(function(sPartnerid) {
-							if (sPartnerid == oRes.partnerid) {
-								return sPartnerid;
-							}
+						var sPartnerid = aPartners.find(function(sPartnerid){
+							if (sPartnerid==oRes.partnerid) {
+								return sPartnerid; 
+							} 
 						});
 						if (sPartnerid) {
 							oOrder.approvable = true;
 						}
 					}
-
+					
 				}
 
 				// return results
-				res.write(JSON.stringify({docs: orders}));
+				res.write(JSON.stringify({
+					orders : orders
+				}));
 				return res.end();
 			});
 

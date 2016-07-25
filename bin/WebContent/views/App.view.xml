@@ -29,7 +29,7 @@
 
 			<Page id='pageCockpit' title="Communication Portal - Cockpit">
 				<headerContent>
-					<Button  icon="sap-icon://settings" press="openSettings" visible = "{/access/ADMINISTRATOR}" />
+					<Button  icon="sap-icon://settings" press="openSettings" />
 					<Button  icon="sap-icon://log" press="onLogout" />
 				</headerContent>
 
@@ -52,13 +52,13 @@
 				<content>
 					<TileContainer>
 						<StandardTile id="tileMyOrders" title="My orders"
-							info="{/overview/apord/iRejected}" icon="sap-icon://document-text" number="{/overview/apord/iAll}"
-							numberUnit="{/overview/apord/iApproved}" press="openOrders" visible = "{/access/AP-ORD}">
+							info="sdf" icon="sap-icon://document-text" number="23"
+							numberUnit="12" press="openOrders" visible = "{access>/access/AP-ORD}">
 						</StandardTile>
 
 						<StandardTile id="tileIncomingInvoices" title="Incoming invoices"
-							info="{/overview/apinv/iRejected}" icon="sap-icon://sales-notification" number="{/overview/apinv/iAll}"
-							numberUnit="{/overview/apinv/iApproved}" visible = "{/access/AP-INV}" press="openIncomingInvoices">
+							info="" icon="sap-icon://sales-notification" number="555"
+							numberUnit="1" visible = "{access>/access/AP-INV}" press="openIncomingInvoices">
 						</StandardTile>
 					</TileContainer>
 
@@ -75,12 +75,12 @@
 				<content>
 					<TileContainer>
 						<StandardTile id="tileIncomingOrders" title="Incoming orders"
-							info="{/overview/arord/iRejected}" icon="sap-icon://my-sales-order" number="{/overview/arord/iAll}"
-							numberUnit="{/overview/arord/iApproved}" press="openIncomingOrders"  visible = "{/access/AR-ORD}" />
+							info="sdf" icon="sap-icon://my-sales-order" number="12"
+							numberUnit="1" press="openIncomingOrders"  visible = "{access>/access/AR-ORD}" />
 
 						<StandardTile id="tileMyInvoices" title="My Invoices"
-							info="{/overview/arinv/iRejected}" icon="sap-icon://travel-expense-report" number="{/overview/arinv/iAll}"
-							numberUnit="{/overview/arinv/iApproved}" visible = "{/access/AR-INV}" press="openMyInvoices" />
+							info="" icon="sap-icon://travel-expense-report" number="3"
+							numberUnit="0" visible = "{access>/access/AR-INV}" press="openMyInvoices" />
 
 					</TileContainer>
 				</content>

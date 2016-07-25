@@ -18,13 +18,6 @@ var Schema = mongoose.Schema;
 
 // Schemas
 
-
-var counters = new Schema({
-	_id:String,
-	seq: {type: Number, default: 1}
-});
-
-
 var users = new Schema({
     userid: {type: String, maxlength: 10 },
     pass: {type: String},
@@ -38,9 +31,9 @@ var users = new Schema({
 });
 
 var partners = new Schema({
-    partnerid: {type: String, required: true},
-    partnername: {type: String, required: true},
-	email: {type: String, required: true},
+    partnerid: {type: String},
+    partnername: {type: String},
+	email: {type: String},
 	address: {type: String},
     comment: {type: String}        
 });
@@ -57,7 +50,7 @@ var orders = new Schema({
     note: String,
     crdate: {type: Date, default: Date.now},
     parties: [{role: {type: String}, partnerid: {type: String}}],
-    approval: [{stepno: {type: Number}, steptype: {type: String}, partnerid: {type: String}, resolver: {type: String}, resdate: {type: Date}, note: {type: String}, approve: {type: Boolean}}]
+    approval: [{stepno: {type: Number}, steptype: {type: String}, partnerid: {type: String}, resdate: {type: Date}, note: {type: String}, approve: {type: Boolean}}]
 });
 
     
@@ -70,11 +63,10 @@ var invoices = new Schema({
     vatamount: String,
     currency:  String,
     note: String,
-    lasterr: String,
     crdate: {type: Date, default: Date.now},
     order: { type: Schema.Types.ObjectId, ref: 'orders', required: true },
     parties: [{role: {type: String}, partnerid: {type: String}}],
-    approval: [{stepno: {type: Number}, steptype: {type: String}, partnerid: {type: String}, resolver: {type: String}, resdate: {type: Date}, note: {type: String}, approve: {type: Boolean}}]
+    approval: [{stepno: {type: Number}, steptype: {type: String}, partnerid: {type: String}, resdate: {type: Date}, note: {type: String}, approve: {type: Boolean}}]
 });
 
 
@@ -89,41 +81,14 @@ var workflows = new Schema({
 })
 
 
-// Models
-
-var countersModel = mongoose.model('counters', counters);
 var usersModel = mongoose.model('users', users);
 var partnersModel = mongoose.model('partners', partners);
 var ordersModel = mongoose.model('orders', orders);
 var invoicesModel = mongoose.model('invoices', invoices);
 var workflowsModel = mongoose.model('workflows', workflows);
 
-
-// utils
-
-getNextId = function(sType) {
-	return new Promise(function(resolve, reject){
-		countersModel.findOneAndUpdate(
-				{_id: sType},
-				{ $inc: { seq: 1 }},
-				{new: true, upsert: true},
-		function(err, oNext) {
-					if (err) return  reject(err);
-					return resolve(oNext.seq);
-				}		
-		)
-		
-	});
-};
-
-
-
-
-
 module.exports.usersModel = usersModel;
 module.exports.partnersModel = partnersModel;
 module.exports.ordersModel = ordersModel;
 module.exports.invoicesModel = invoicesModel;
 module.exports.workflowsModel = workflowsModel;
-
-module.exports.getNextId = getNextId;

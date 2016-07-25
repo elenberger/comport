@@ -25,14 +25,7 @@ sap.ui.define([], function() {
 		 
 			return "";
 		 
-		},
-		
-		displaysendExt: function(sStat) {
-	       if (sStat==='Approved' || sStat==='Error') {
-	    	   return true;
-	       }	
-	       return false;
-		} 
+		}
 
 	};
 });

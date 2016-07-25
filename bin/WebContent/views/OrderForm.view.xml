@@ -14,51 +14,21 @@
 				<IconTabFilter icon="sap-icon://header" id="idOverview"
 					text="Overview" key="overview">
 					<content>
-
-						<Panel headerText="Header" expandable="false" expanded="true">
-							<HBox class="sapUiSmallMargin">
-								<VBox class="sapUiSmallMargin" justifyContent="Start">
-									<HBox>
-										<Label text="Number:" class="sapUiSmallMarginEnd" width="100px" />
-										<Text text="{num}" />
-									</HBox>
-									<HBox>
-										<Label text="Date:" class="sapUiSmallMarginEnd" width="100px" />
-										<Text text="{date}" />
-									</HBox>
-									<HBox>
-										<Label text="Owner:" class="sapUiSmallMarginEnd" width="100px" />
-										<Text text="{partnername}" />
-									</HBox>
-									<HBox>
-										<Label text="Status:" class="sapUiSmallMarginEnd" width="100px" />
-										<Text text="{stat}" />
-									</HBox>
-								</VBox>
-								<VBox justifyContent="Start" class="sapUiSmallMargin">
-									<HBox>
-										<Label text="Currency: " class="sapUiSmallMarginEnd"
-											width="100px" />
-										<Text text="{currency}" />
-									</HBox>
-									<HBox>
-										<Label text="Net amount:" class="sapUiSmallMarginEnd"
-											width="100px" />
-										<Text text="{netamount}" />
-									</HBox>
-									<HBox>
-										<Label text="VAT amount: " class="sapUiSmallMarginEnd"
-											width="100px" />
-										<Text text="{vatamount}" description="{currency}" />
-									</HBox>
-									<HBox>
-										<Label text="Description: " class="sapUiSmallMarginEnd"
-											width="100px" />
-										<Text text="{note}" />
-									</HBox>
-								</VBox>
-							</HBox>
-						</Panel>
+						<f:SimpleForm minWidth="1024" width="" editable="false"
+							labelMinWidth="192" layout="ResponsiveGridLayout" labelSpanL="3"
+							labelSpanM="3" emptySpanL="4" emptySpanM="4" columnsL="2"
+							columnsM="2">
+							<Label text="Number" />
+							<Text text="{num}" />
+							<Label text="Date" />
+							<Text text="{date}" />
+							<Label text="Owner" />
+							<Text text="{partnerid} {partnername}" />
+							<Label text="Status" />
+							<Text text="{stat}" />
+							<Label text="Description" />
+							<Text text="{note}" />
+						</f:SimpleForm>
 
 						<Table class="sapUiSizeCompact" headerText="Partners" xmlns="sap.m"
 							id="idTabPartners" items="{path: 'parties'}">
@@ -162,12 +132,10 @@
 						<items>
 							<ColumnListItem>
 								<cells>
-									<core:Icon size="2rem"
-										src="{parts:[{path: 'approve'}, {path: 'steptype'}], formatter: '.formatApprovalIcon'}" />
+									<core:Icon size="2rem"   
+										src="{parts:[{path: 'approve'}, {path: 'steptype'}], formatter: '.formatApprovalIcon'}"/>
 									<Text text="{partnerid} {partnername}" />
-									<Text
-										text="{path: 'resdate', formatter: '.oFormatter.formatTimestamp'}'" />
-									<Text text="{resolver}" />
+									<Text text="{path: 'resdate', formatter: '.oFormatter.formatTimestamp'}'" />
 									<Text text="{note}" />
 								</cells>
 							</ColumnListItem>
@@ -177,28 +145,17 @@
 							<Column width="10%">
 								<Label text="Step" />
 							</Column>
-							<Column>
+							<Column >
 								<Label text="Approver" />
 							</Column>
 							<Column>
 								<Label text="Resolution date" />
 							</Column>
 							<Column>
-								<Label text="Resolver" />
-							</Column>
-							<Column>
 								<Label text="Comment" />
 							</Column>
 						</columns>
 					</Table>
-
-					<HBox visible="{approvable}" justifyContent="End" alignItems="Center">
-						<items>
-							<Text class="sapUiSmallMargin" text="Approval comment" />
-							<TextArea class="sapUiSmallMargin" id="approvalComment"
-								width="200px" />
-						</items>
-					</HBox>
 
 				</IconTabFilter>
 			</items>

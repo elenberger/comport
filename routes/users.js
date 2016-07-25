@@ -2,41 +2,108 @@ var usersModel = require('./dbwrapper').usersModel;
 var partnersModel = require('./dbwrapper').partnersModel;
 var basicAuth = require('basic-auth');
 
-getList = function(req, res) {
-
+maintainUser = function(req, res) {
 	res.setHeader("Content-Type", "application/json");
 
-	usersModel.find({}).populate('partners.partner').lean().exec(function(err, users) {
-		if (!err) {
+	// check if user Administrator
 
-			// get partnername.
-			 for (i=0;i<users.length;i++){
-			 delete users[i].pass;
-			// var sRoles = users[i].roles.join();
-			// users[i].roles = sRoles;
-			 }
-			//	 if (users[i].roles) {
-			// var aRoles = users[i].roles;
-			// var aRolesNew = [];
-			// for (j=0; j<aRoles.length; j++) {
-			// aRolesNew.push({"key":aRoles[j]});
-			// }
-			// users[i].roles = aRolesNew;
-			// }
-			// }
+	getUser(req).then(
+	// user Found
+	function(oUser) {
 
-			res.write(JSON.stringify({
-				users : users
-			}));
+		var sRole = oUser.roles.find(function(sRole) {
+			if (sRole === 'ADMINISTRATOR')
+				return sRole;
+		})
 
+		if (!sRole)
+			return res.status(200).send({
+				"message" : "No autorization"
+			});
+
+		var sOperation = req.body.operation;
+		var oUser = req.body.user;
+
+		if (!sOperation || !oUser)
+			return res.status(200).send({
+				"message" : "Wrong message format"
+			});
+
+		switch (sOperation) {
+		case 'C':
+		case 'U':
+			createUser(res, oUser);
+			break;
+		case 'D':
+			deleteUser(res, oUser);
+			break;
+		default:
+			return res.status(200).send({
+				"message" : "Wrong message format"
+			});
+			break;
 		}
-
-		return res.end();
-
+	},
+	// error->User not found
+	function(err) {
+		return res.status(500).send({
+			"error" : "unknown error"
+		});
 	});
+
+};
+
+createUser = function(res, oUser) {
+	usersModel.findOneAndUpdate(
+			{userid: oUser.userid},
+			oUser,
+			{new: true, upsert: true},
+			function(err, oNewUser) {
+				
+				if (err) return res.status(200).send({"error": "Error during user creation "});
+				
+				return res.status(200).send(oNewUser.toObject());
+				
+			}
+			);
+		
+};
+
+deleteUser = function(res,oUser) {
+	usersModel.findOneAndRemove(
+			{userid: oUser.userid},
+			function(err, oDelUser) {
+				
+				if (err) return res.status(200).end(JSON.stringify({"error": "Error during user deletion "}));
+				
+				return res.status(200).end(JSON.stringify({"message": "User has been successfully deleted"}));
+				
+			}
+			);
+};
+
+getUserList = function(req, res) {
+	
+	res.setHeader("Content-Type", "application/json");
+
+	usersModel.find({}).populate('partners.partner').lean().exec(
+			function(err, users) {
+				if (!err) {
+
+					// get partnername.
+					for (i = 0; i < users.length; i++) {
+						delete users[i].pass;
+					}
+				}
+					res.write(JSON.stringify({
+						users : users
+					}));
+
+					return res.end();	
+			});
 }
 
-getUser = function(req, res) {
+getUser = function(req) {
 
 	var user = basicAuth(req);
 
@@ -58,40 +125,72 @@ getUser = function(req, res) {
 
 assignPartner = function(req, res) {
 
+	//Format: {userid: userid,
+	//         partners: [partnerid]}
 	var sUser = req.body.userid;
-	var sPartnerid  = req.body.partnerid;
+	var aPartners = req.body.partners;
 	
-	usersModel.findOne({
-		userid : sUser
-	}).exec(function(err, dbuser) {
+	if (!sUser || !aPartners) return res.status(500).send({"error":"Wrong message format"});
 
-		if ((err) || (!dbuser))
-			return res.end(err);
+	partnersModel.find({
+		partnerid : {$in : aPartners}
+	}).exec(function(err, aDbPartners) {
 
-		partnersModel.findOne({
-			partnerid : sPartnerid
-		}).exec(function(err, dbpartner) {
-
-			if ((err) || (!dbpartner))
-				return res.end(err);
-
-			dbuser.partners.push({
-				partner : dbpartner
+		if ((err) || (!aDbPartners))
+			return res.end({"error":"partner not found"});
+	
+        var aUpdUserPartners = [];
+		for (var i=0; i<aDbPartners.length; i++){
+		
+			aUpdUserPartners.push({partner: aDbPartners[i]});
+		}
+		
+		var oUpdUser = {partners: aUpdUserPartners}
+		
+		
+			usersModel.findOneAndUpdate(
+					{userid: sUser},
+					oUpdUser,
+					{new: true, upsert:true},
+			function(err, oUpdUser) {
+            
+						if (err) return res.send({"error": "Error during partner update"});
+            return res.send(oUpdUser.toObject());
+					
 			});
-			
-			dbuser.save(function(err) {
-				if (err)
-					return res.end(err);
-				return res.end();
+	});
+
+}
+	
+
+
+validatePartner = function(req, partnerid) {
+
+	return new Promise(function(resolve, reject) {
+		getUser(req).then(function(oUser) {
+
+			if (!oUser.partners)
+				resolve(false);
+
+			var oUserPartner = oUser.partners.find(function(oUserPartner) {
+				if (oUserPartner.partner.partnerid === partnerid)
+					return oUserPartner.partner;
+
 			});
 
+			if (oUserPartner) {
+				resolve(true);
+			} else {
+				resolve(false);
+			}
 		});
-
 	});
 
 };
 
 // module.exports.addRecord = addRecord;
-module.exports.getList = getList;
+module.exports.maintainUser = maintainUser;
+module.exports.getUserList = getUserList;
 module.exports.getUser = getUser;
 module.exports.assignPartner = assignPartner;
+module.exports.validatePartner = validatePartner;

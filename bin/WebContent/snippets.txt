@@ -1,0 +1,23 @@
+		<List id="idOrdersList" itemPress="" items="{path: '/orders'}">
+			<StandardListItem title="{num} {note}" description="{date}"
+				info="{stat}" type="Active" press="onOrderPress" />
+		</List>
+
+		
+		
+		<content>
+			<l:Grid defaultSpan="L12 M12 S12" width="auto">
+				<f:SimpleForm minWidth="1024" width="" editable="true"
+					title="Main settings" labelMinWidth="192" layout="ResponsiveGridLayout"
+					labelSpanL="3" labelSpanM="3" emptySpanL="4" emptySpanM="4"
+					columnsL="1" columnsM="1">
+					<Label text="Internal Patrner identificator" />
+					<Text text="232323232" editable="false" />
+
+				</f:SimpleForm>
+			</l:Grid>
+		</content>
+		
+		
+		editable= "{parts: [{path: '/orders/approvable'}, {path: 'approve'}], formatter: '.oFormatter.approveItemEnabled'}" 
+		

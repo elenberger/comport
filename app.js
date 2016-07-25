@@ -6,11 +6,18 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
 var routes = require('./routes/index');
-//var users = require('./routes/users');
-
-var v2 = 0; //
 
 var app = express();
+
+
+//email service initialize
+//from: 'n.reply@list.ru',
+//host: 'smtp.list.ru', // hostname 
+//secureConnection: true, // use SSL 
+//port: 465, // port for secure SMTP 
+//requiresAuth: true,
+//transportMethod: 'SMTP', // default is SMTP. Accepts anything that nodemailer accepts 
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));

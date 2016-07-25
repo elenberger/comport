@@ -1,0 +1,14 @@
+<core:FragmentDefinition
+   xmlns="sap.m"
+   xmlns:core="sap.ui.core" >
+   <Dialog
+      title="Select partner">
+      <ComboBox id="partnersh_combo" items="{path: '/partners'}" >
+      <core:Item key="{partnerid}" text="{partnername}"/>
+      </ComboBox>
+      <buttons>
+         <Button icon="sap-icon://accept" press="onSubmitPartnerSH_Dlg"/>
+         <Button icon="sap-icon://decline" press="onClosePartnerSH_Dlg"/>
+      </buttons>
+   </Dialog>
+</core:FragmentDefinition>
