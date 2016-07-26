@@ -124,7 +124,7 @@ addOrder = function(oOrder, req, res) {
 						oOrderWorkflowStep.partnerid = findPartyPartnerId(
 								oOrder.parties, aSteps[i].role);
 
-						if (i == 0) {
+						if (i === 0) {
 							oOrderWorkflowStep.approve = true;
 
 							// data for email

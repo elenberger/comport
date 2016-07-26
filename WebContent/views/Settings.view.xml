@@ -3,6 +3,7 @@
 	controllerName="views.Settings" xmlns:html="http://www.w3.org/1999/xhtml">
 	<Page title="Settings" class="sapUiSizeCompact">
 		<headerContent>
+			<Text text="{/access/user/name} ( {/access/user/userid} )" />
 			<Button id="onHome" icon="sap-icon://home" press="onNavBack" />
 		</headerContent>
 		<content>
@@ -21,9 +22,10 @@
 												width="auto" />
 										</headerContent>
 
-										<List items="{path: '/users'}">
+										<List id="overviewUsers" mode="SingleSelectMaster" itemPress="onUserDetails"
+											items="{path: '/users'}">
 											<StandardListItem title="{userid}"
-												description="{name}" type="Active" press="onUserDetails" />
+												description="{name}" type="Active" />
 										</List>
 										<footer>
 											<Toolbar>
@@ -72,7 +74,8 @@
 
 												<IconTabFilter text="Partners" class="sapUiSmallMargin">
 													<content>
-														<Table id="tableUserPartners" mode="SingleSelectMaster" items="{path: 'partners'}">
+														<Table id="tableUserPartners" mode="SingleSelectMaster"
+															items="{path: 'partners'}">
 															<headerToolbar>
 																<Toolbar id="toolbarPartnerAssignment" visible="false">
 																	<Button icon="sap-icon://add" press="onAddPartnerAssignment" />
@@ -134,10 +137,11 @@
 												width="auto" />
 										</headerContent>
 
-										<List items="{path: '/partners'}" growingScrollToLoad="true">
+										<List id="overviewPartners" mode="SingleSelectMaster" itemPress="onPartnerDetails"
+											items="{path: '/partners'}" growingScrollToLoad="true">
 
 											<StandardListItem title="{partnerid}"
-												description="{partnername}" type="Active" press="onPartnerDetails" />
+												description="{partnername}" type="Active" />
 										</List>
 										<footer>
 											<Toolbar>

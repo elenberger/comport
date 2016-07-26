@@ -21,8 +21,9 @@ router.get('/login', function(req, res, next) {
 	function(oUser) {
 		// fill access\roles parameters
 		res.setHeader("Content-Type", "application/json");
-
+		
 		var oAccess = {
+			"user": {userid: oUser.userid, name: oUser.name },	
 			"ADMINISTRATOR" : false,
 			"AP-ORD" : false,
 			"AP-INV" : false,

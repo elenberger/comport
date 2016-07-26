@@ -1,11 +1,8 @@
-
 var oExtFormatter;
 sap.ui.define([ "comport/model/formatter" ], function(oObject) {
 	"use strict";
 	oExtFormatter = oObject;
 });
-
-
 
 sap.ui.controller("views.OrderForm", {
 
@@ -17,12 +14,10 @@ sap.ui.controller("views.OrderForm", {
 	 * 
 	 * @memberOf demopartner.OrderForm
 	 */
-	
-	oFormatter: oExtFormatter,
-	
-	
+
+	oFormatter : oExtFormatter,
+
 	onInit : function() {
-	
 
 	},
 
@@ -40,105 +35,97 @@ sap.ui.controller("views.OrderForm", {
 
 		if (evt.getParameters().key == "details") {
 			var oView = this.getView();
-			// var oContext = oView.byId("Form1").getBindingContext();
 			var oContext = oView.getBindingContext();
 			var sNum = oContext.getModel().getProperty(oContext.getPath()).num;
-			var sPartnerid = oContext.getModel().getProperty(oContext.getPath()).partnerid;
+			var sPartnerid = oContext.getModel()
+					.getProperty(oContext.getPath()).partnerid;
 
 			var oTab = evt.getParameters().selectedItem;
+			var oModel = this.getView().getModel();
+			oController = this;
 
-			var sAuth = window.sessionStorage.getItem('Auth');
+			sEndPoint = "/orders/" + sPartnerid + "/" + sNum;
+			oModel.requestData(sEndPoint,
+					function(iCode, oData) {
+						if (iCode === 200) {
+							oContext = oController.getView()
+									.getBindingContext();
+							oModel.setProperty(
+									"orderdetails",
+									oData.orderDetails,
+									oContext);
 
-			var oBusyDialog = oView.byId("idBusyDialog");
-			oBusyDialog.open();
-
-			jQuery.ajax({
-				type : 'GET',
-				url : "/orders/" + sPartnerid+ "/"+ sNum,
-				headers : {
-					'Authorization' : sAuth
-				},
-				success : function(data, stat, xhdr) {
-					if (xhdr.status == '200') {
-
-						oTab.setModel(new sap.ui.model.json.JSONModel(data));
-						oTab.bindElement("/orderDetails");
-						// oView.setBusy(false);
-						oBusyDialog.close();
-					}
-				},
-				error : function(data, stat, xhdr) {
-					alert("Access denied!");
-					// oView.setBusy(false);
-					oBusyDialog.close();
-				}
-			});
+						} // else sap.m.MessageToast.show("No
+						// Data");
+					});
 		}
 	},
 
 	formatApprovalIcon : function(bApprove, sStepType) {
-		if (sStepType==='N') {
+		if (sStepType === 'N') {
 			return "sap-icon://message-information";
-		}
-		else 
-		return bApprove === true ? "sap-icon://process"
-				: "sap-icon://expand-group";
+		} else
+			return bApprove === true ? "sap-icon://process"
+					: "sap-icon://expand-group";
 
 	},
-    
-        
-    sendApprove: function(oContext, sAction) {
-        
-        var sAuth = window.sessionStorage.getItem('Auth');
-        var oModel = oContext.getModel();
-        
-        var oOrder = {
-            num: oModel.getProperty("num", oContext),
-            partnerid: oModel.getProperty("partnerid", oContext),
-            note:      this.getView().byId("approvalComment").getValue()
-            }; 
-        var oObj = {
-            operation: sAction,
-            order: oOrder
-        };
-            
-        
-        
-        jQuery.ajax({
-            type: 'POST',
-            url: "/orders",
-            dataType: "json",
-            contentType: "application/json; charset=utf-8",
-            headers: {
-                'Authorization': sAuth
-            },
-            data: JSON.stringify(oObj),
-            success: function (data, stat, xhdr) {
-                if (xhdr.status == '200') {
 
-                  alert("Order approved");
+	refreshOrders : function(evt) {
 
-                } else if (xhdr.status == '500') {
-                alert("Error performing action!");    
-                }
-            },
-            error: function (data, stat, xhdr) {
-                alert("Error performing action!");
-            }
-        });
-      
+		var sPath = this.AppController.App.getPage("Orders")
+				.getBindingContext().getPath();
+		this.getView().getModel().requestData(sPath, function(iCode, oData) {
+		});
+	},
+
+	sendApprove : function(oContext, sAction) {
+
+		var sAuth = window.sessionStorage.getItem('Auth');
+		var oModel = oContext.getModel();
+
+		var oController = this;
+		
+		var oOrder = {
+			num : oModel.getProperty("num", oContext),
+			partnerid : oModel.getProperty("partnerid", oContext),
+			note : this.getView().byId("approvalComment").getValue()
+		};
+		var oObj = {
+			operation : sAction,
+			order : oOrder
+		};
         
-        
-    },
-    
-    approveOrder: function(evt) {
-        this.sendApprove(this.getView().getBindingContext(), 'A');
-        
-    },
-    
-    rejectOrder: function(evt) {
-        this.sendApprove(this.getView().getBindingContext(), 'A');
-    }
+		
+		oModel
+		.postData(
+				"/orders",
+				oObj,
+				function(iStatus, oData) {
+
+					if (iStatus === 200) {
+						if (oObj.operation === 'A')
+							sap.m.MessageToast
+									.show("Document was successfully approved ");
+						else
+							sap.m.MessageToast
+									.show("Document was successfully rejected ");
+						oController.refreshOrders();
+					} else
+						sap.m.MessageToast
+								.show("Error while processing document");
+
+				});
+
+	},
+
+	approveOrder : function(evt) {
+		this.sendApprove(this.getView().getBindingContext(), 'A');
+
+	},
+
+	rejectOrder : function(evt) {
+		this.sendApprove(this.getView().getBindingContext(), 'A');
+	}
 
 /**
  * Similar to onAfterRendering, but this hook is invoked before the controller's

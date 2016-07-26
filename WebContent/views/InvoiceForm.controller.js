@@ -1,4 +1,7 @@
 var oExtFormatter;
+
+jQuery.sap.require('comport.model.AppModel');
+
 sap.ui.define([ "comport/model/formatter" ], function(oObject) {
 	"use strict";
 	oExtFormatter = oObject;
@@ -9,20 +12,7 @@ sap.ui
 				"views.InvoiceForm",
 				{
 
-					/**
-					 * Called when a controller is instantiated and its View
-					 * controls (if available) are already created. Can be used
-					 * to modify the View before it is displayed, to bind event
-					 * handlers and do other one-time initialization.
-					 * 
-					 * @memberOf demopartner.OrderForm
-					 */
-
 					oFormatter : oExtFormatter,
-
-					// onInit: function() {
-					//
-					// },
 
 					onNavBack : function() {
 
@@ -34,50 +24,45 @@ sap.ui
 						this.AppController.navHome();
 					},
 
+					refreshInvoices : function(evt) {
+						var sPath = this.AppController.App.getPage("Invoices").getBindingContext().getPath();
+						this.getView().getModel().requestData(sPath,
+								function(iCode, oData) {
+								});
+					},
+
 					onTabSelect : function(evt) {
 
 						if (evt.getParameters().key == "details") {
 							var oView = this.getView();
-							// var oContext =
-							// oView.byId("Form1").getBindingContext();
 							var oContext = oView.getBindingContext();
 							var sNum = oContext.getModel().getProperty(
 									oContext.getPath()).num;
 							sPartnerid = oContext.getModel().getProperty(
 									oContext.getPath()).partnerid;
 
+							var oModel = this.getView().getModel();
+
 							var oTab = evt.getParameters().selectedItem;
+							oTab.setModel(oModel);
 
-							var sAuth = window.sessionStorage.getItem('Auth');
+							var oController = this;
 
-							var oBusyDialog = oView.byId("idBusyDialog");
-							oBusyDialog.open();
+							var sEndPoint = "/invoices/" + sPartnerid + "/"
+									+ sNum;
 
-							jQuery
-									.ajax({
-										type : 'GET',
-										url : "/invoices/" + sPartnerid + "/"
-												+ sNum,
-										headers : {
-											'Authorization' : sAuth
-										},
-										success : function(data, stat, xhdr) {
-											if (xhdr.status == '200') {
+							oModel.requestData(sEndPoint,
+									function(iCode, oData) {
+										if (iCode === 200) {
+											oContext = oController.getView()
+													.getBindingContext();
+											oModel.setProperty(
+													"invoicedetails",
+													oData.invoiceDetails,
+													oContext);
 
-												oTab
-														.setModel(new sap.ui.model.json.JSONModel(
-																data));
-												oTab
-														.bindElement("/invoiceDetails");
-												// oView.setBusy(false);
-												oBusyDialog.close();
-											}
-										},
-										error : function(data, stat, xhdr) {
-											alert("Access denied!");
-											// oView.setBusy(false);
-											oBusyDialog.close();
-										}
+										} // else sap.m.MessageToast.show("No
+										// Data");
 									});
 						}
 					},
@@ -93,8 +78,8 @@ sap.ui
 
 					sendApprove : function(oContext, sAction) {
 
-						var sAuth = window.sessionStorage.getItem('Auth');
 						var oModel = oContext.getModel();
+						var oController = this;
 
 						var oInvoice = {
 							num : oModel.getProperty("num", oContext),
@@ -109,28 +94,25 @@ sap.ui
 							invoice : oInvoice
 						};
 
-						jQuery.ajax({
-							type : 'POST',
-							url : "/invoices",
-							dataType : "json",
-							contentType : "application/json; charset=utf-8",
-							headers : {
-								'Authorization' : sAuth
-							},
-							data : JSON.stringify(oObj),
-							success : function(data, stat, xhdr) {
-								if (xhdr.status == '200') {
+						oModel
+								.postData(
+										"/invoices",
+										oObj,
+										function(iStatus, oData) {
 
-									alert("Invoice approved");
+											if (iStatus === 200) {
+												if (oObj.operation === 'A')
+													sap.m.MessageToast
+															.show("Document was successfully approved ");
+												else
+													sap.m.MessageToast
+															.show("Document was successfully rejected ");
+												oController.refreshInvoices();
+											} else
+												sap.m.MessageToast
+														.show("Error while processing document");
 
-								} else if (xhdr.status == '500') {
-									alert("Error performing action!");
-								}
-							},
-							error : function(data, stat, xhdr) {
-								alert("Error performing action!");
-							}
-						});
+										});
 
 					},
 
@@ -146,7 +128,7 @@ sap.ui
 					},
 
 					sendExtSys : function(evt) {
-						var sAuth = window.sessionStorage.getItem('Auth');
+						var oController = this;
 						var oContext = this.getView().getBindingContext();
 						var oModel = oContext.getModel();
 
@@ -161,33 +143,24 @@ sap.ui
 							invoice : oInvoice
 						};
 
-						jQuery
-								.ajax({
-									type : 'POST',
-									url : "/invoices",
-									dataType : "json",
-									contentType : "application/json; charset=utf-8",
-									headers : {
-										'Authorization' : sAuth
-									},
-									data : JSON.stringify(oObj),
-									success : function(data, stat, xhdr) {
-										if (xhdr.status == '200') {
+						oModel
+								.postData(
+										"/invoices",
+										oObj,
+										function(iStatus, oData) {
 
-											sap.m.MessageToast
-													.show("Invoice has been successfully sent to External System");
-											;
+											if (iStatus === 200) {
+												sap.m.MessageToast
+														.show("Invoice has been successfully sent to External System");
+												oController.refreshInvoices();	
+											}
+											
+											else
+												sap.m.MessageToast
+														.show("Error while sending message to external system");
 
-										} else if (xhdr.status == '500') {
-											sap.m.MessageToast
-													.show("Error while sending message to external system");
-										}
-									},
-									error : function(data, stat, xhdr) {
-										sap.m.MessageToast
-												.show("Technical error!");
-									}
-								});
+										});
+
 					}
 
 				/**

@@ -14,7 +14,7 @@ sap.ui.controller("views.App", {
 	onInit : function() {
 
 		// set new Default model
-        var oModel =  new comport.model.AppModel();
+		var oModel = new comport.model.AppModel();
 		this.getView().setModel(oModel);
 
 		var oController = this;
@@ -23,7 +23,7 @@ sap.ui.controller("views.App", {
 		var sAuth = window.sessionStorage.getItem('Auth');
 
 		if (sAuth) {
-			
+
 			oModel.requestLogin(sAuth, function(sStatus, oData) {
 				if (sStatus === 200) {
 					window.sessionStorage.setItem("Auth", sAuth);
@@ -32,10 +32,9 @@ sap.ui.controller("views.App", {
 
 				} else {
 					oController.navTo('idLoginPage');
-					
+
 				}
 			});
-			
 
 		}
 
@@ -58,7 +57,9 @@ sap.ui.controller("views.App", {
 		this.getView().byId("idUser").setValue();
 		this.getView().byId("idPass").setValue();
 
+		this.getView().setModel(new comport.model.AppModel());
 		var oModel = this.getView().getModel();
+
 		oModel.requestLogin(sAuth, function(sStatus, oData) {
 			if (sStatus === 200) {
 				window.sessionStorage.setItem("Auth", sAuth);
@@ -69,7 +70,7 @@ sap.ui.controller("views.App", {
 				oController.getView().byId("idPass").setValue();
 			} else {
 				sap.m.MessageToast.show("Wrong aithorization");
-				
+
 			}
 		});
 
@@ -78,67 +79,68 @@ sap.ui.controller("views.App", {
 	openOrders : function() {
 
 		var oController = this;
-        var oModel = oController.getView().getModel();
-        
-        oModel.requestData("/orders", function(iCode, oData){
-        if (iCode === 200) {
-                oController.navTo("Orders");
-                var oViewPage = oController.App.getPage("Orders");
-                oViewPage.bindElement("/orders");
-        	    
-        } else sap.m.MessageToast.show("No Data");	
-        });
-        
+		var oModel = oController.getView().getModel();
+
+		oModel.requestData("/orders", function(iCode, oData) {
+			if (iCode === 200) {
+				oController.navTo("Orders");
+				var oViewPage = oController.App.getPage("Orders");
+				oViewPage.bindElement("/orders");
+
+			} else
+				sap.m.MessageToast.show("No Data");
+		});
 
 	},
 
 	openIncomingInvoices : function() {
-		
+
 		var oController = this;
-        var oModel = oController.getView().getModel();
-        
-        oModel.requestData("/incinvoices", function(iCode, oData){
-        if (iCode === 200) {
-                  
-        	    
-        	oController.navTo("Invoices");
-            var oViewPage = oController.App.getPage("Invoices");
-            oViewPage.bindElement("/incinvoices");
-        	
-        	    
-        } else sap.m.MessageToast.show("No Data");	
-        });
-        
+		var oModel = oController.getView().getModel();
+
+		oModel.requestData("/incinvoices", function(iCode, oData) {
+			if (iCode === 200) {
+
+				oController.navTo("Invoices");
+				var oViewPage = oController.App.getPage("Invoices");
+				oViewPage.bindElement("/incinvoices");
+
+			} else
+				sap.m.MessageToast.show("No Data");
+		});
+
 	},
 
 	openIncomingOrders : function(evt) {
-		
+
 		var oController = this;
-        var oModel = oController.getView().getModel();
-        
-        oModel.requestData("/incorders", function(iCode, oData){
-        if (iCode === 200) {
-                oController.navTo("Orders");
-                var oViewPage = oController.App.getPage("Orders");
-                oViewPage.bindElement("/incorders");
-        	    
-        } else sap.m.MessageToast.show("No Data");	
-        });
+		var oModel = oController.getView().getModel();
+
+		oModel.requestData("/incorders", function(iCode, oData) {
+			if (iCode === 200) {
+				oController.navTo("Orders");
+				var oViewPage = oController.App.getPage("Orders");
+				oViewPage.bindElement("/incorders");
+
+			} else
+				sap.m.MessageToast.show("No Data");
+		});
 	},
 
 	openMyInvoices : function() {
-		
+
 		var oController = this;
-        var oModel = oController.getView().getModel();
-        
-        oModel.requestData("/invoices", function(iCode, oData){
-        if (iCode === 200) {
-                  
-        	    oController.navTo("Invoices");
-                var oViewPage = oController.App.getPage("Invoices");
-                oViewPage.bindElement("/invoices");
-        } else sap.m.MessageToast.show("No Data");	
-        });
+		var oModel = oController.getView().getModel();
+
+		oModel.requestData("/invoices", function(iCode, oData) {
+			if (iCode === 200) {
+
+				oController.navTo("Invoices");
+				var oViewPage = oController.App.getPage("Invoices");
+				oViewPage.bindElement("/invoices");
+			} else
+				sap.m.MessageToast.show("No Data");
+		});
 
 	},
 
@@ -185,29 +187,28 @@ sap.ui.controller("views.App", {
 			});
 
 			oPage.getController().AppController = this;
-			oPage.setModel(this.getView().getModel());
+		//	oPage.setModel(this.getView().getModel());
 			this.App.addPage(oPage);
 		}
 
 		this.App.to(sPage);
 
 		if (oContext) {
-			this.App.getPage(sPage).setModel(oContext.getModel());
+			//this.App.getPage(sPage).setModel(oContext.getModel());
 			this.App.getPage(sPage).setBindingContext(oContext)
-			// this.App.getPage(sPage).bindElement(oContext.getPath());
 		}
 
 	},
-	
-	getOverview: function() {
+
+	getOverview : function() {
 		var oController = this;
-        var oModel = oController.getView().getModel();
-        
-        oModel.requestData("/overview", function(iCode, oData){
-        
-        	// TODO?	
-        
-        });
+		var oModel = oController.getView().getModel();
+
+		oModel.requestData("/overview", function(iCode, oData) {
+
+			// TODO?
+
+		});
 	}
 
 /**

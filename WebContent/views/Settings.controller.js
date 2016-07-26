@@ -13,58 +13,34 @@ sap.ui.controller("views.Settings", {
 
 		this._sPartnerMode = 'R';
 		this._sUserMode = 'R';
-
-		var oModel = new sap.ui.model.json.JSONModel();
-
-		this.getView().setModel(oModel);
-
-		this.fetchUsers();
-		this.fetchPartners();
-	
 	},
 	
 	fetchUsers: function(){
-		var sAuth = window.sessionStorage.getItem('Auth');
 		var oController = this;
 		
-		jQuery.ajax({
-			type : 'GET',
-			url : "/users",
-			headers : {
-				'Authorization' : sAuth
-			},
-			success : function(data, stat, xhdr) {
-				if (xhdr.status == '200') {
-					oController.getView().getModel().setProperty("/users", data.users);
-				}
-			},
-			error : function(data, stat, xhdr) {
-	         // alert("Error while getting partners");
-			}
-		});
+		var oModel = this.getView().getModel();
+		
+		oModel.requestData("/users",
+				function(iCode, oData) {
+					if (iCode === 200) 
+					oController.getView().getModel().setProperty("/users", oData.users);
+				});
 		
 	},
 	
 	fetchPartners: function(){
 		
-		var sAuth = window.sessionStorage.getItem('Auth');
+// var sAuth = window.sessionStorage.getItem('Auth');
 		var oController = this;
 		
-		jQuery.ajax({
-			type : 'GET',
-			url : "/partners",
-			headers : {
-				'Authorization' : sAuth
-			},
-			success : function(data, stat, xhdr) {
-				if (xhdr.status == '200') {
-					oController.getView().getModel().setProperty("/partners", data.partners);
-				}
-			},
-			error : function(data, stat, xhdr) {
-				alert("Error while getting partners");
-			}
-		});
+		var oModel = this.getView().getModel();
+
+		oModel.requestData("/partners",
+				function(iCode, oData) {
+					if (iCode === 200) 
+					oController.getView().getModel().setProperty("/partners", oData.partners);
+				});
+		
 	},
 
 	onNavBack : function(evt) {
@@ -72,11 +48,11 @@ sap.ui.controller("views.Settings", {
 	},
 
 	onUserDetails : function(evt) {
-		var oContext = evt.getSource().getBindingContext();
+		var oContext = evt.getParameter("listItem").getBindingContext();
 		this.getView().byId("pageUsersDetails").setBindingContext(oContext);
 	},
 	onPartnerDetails : function(evt) {
-		var oContext = evt.getSource().getBindingContext();
+		var oContext = evt.getParameter("listItem").getBindingContext();
 		this.getView().byId("pagePartnersDetails").setBindingContext(oContext);
 	},
 
@@ -157,8 +133,9 @@ sap.ui.controller("views.Settings", {
 	
 	callPartnerUpdate: function(oData) {
 		
-		var sAuth = window.sessionStorage.getItem('Auth');
+// var sAuth = window.sessionStorage.getItem('Auth');
 		var oController = this;
+		var oModel = this.getView().getModel();
 
 		switch (oController._sPartnerMode) {
 			case "C":
@@ -177,30 +154,41 @@ sap.ui.controller("views.Settings", {
 		}
 		
 		
-		jQuery.ajax({
-			type : 'POST',
-			url : "/partners",
-			dataType : "json",
-			contentType : "application/json; charset=utf-8",
-			headers : {
-				'Authorization' : sAuth
-			},
-			data : JSON.stringify(oData),
-			success : function(data, stat, xhdr) {
-				if (xhdr.status == '200') {
+		oModel
+		.postData(
+				"/partners",
+				oData,
+				function(iStatus, oData) {
+
+					if (iStatus === 200) {
+						
+						oController.fetchPartners();
+						
+	                   sap.m.MessageToast.show(sMessage);
+					}
+					 else sap.m.MessageToast.show("Error performing action!");
 					
-					oController.fetchPartners();
 					
-                   sap.m.MessageToast.show(sMessage);
-				
-				} else if (xhdr.status == '500') {
-					sap.m.MessageToast.show("Error performing action!");
-				}
-			},
-			error : function(data, stat, xhdr) {
-				sap.m.MessageToast.show("Error performing action!");
-			}
-		});
+					
+				});
+
+	},
+	
+	onSearchPartner : function(evt) {
+
+		// add filter for search
+		var aFilters = [];
+		var sQuery = evt.getSource().getValue();
+		if (sQuery && sQuery.length > 0) {
+			var filter = new sap.ui.model.Filter("partnername",
+					sap.ui.model.FilterOperator.Contains, sQuery);
+			aFilters.push(filter);
+		}
+
+		// update list binding
+		var list = this.getView().byId("overviewPartners");
+		var binding = list.getBinding("items");
+		binding.filter(aFilters, "Application");
 	},
 	
 // --------USERS
@@ -283,43 +271,39 @@ sap.ui.controller("views.Settings", {
 		},
 		
 		
-		callUserUpdate: function(oData) {
+		callUserUpdate: function(oObj) {
 			
-			var sAuth = window.sessionStorage.getItem('Auth');
 			var oController = this;
+			var oModel = this.getView().getModel();
+			
+			oModel
+			.postData(
+					"/users",
+					oObj,
+					function(iStatus, oData) {
 
-
-			jQuery.ajax({
-				type : 'POST',
-				url : "/users",
-				dataType : "json",
-				contentType : "application/json; charset=utf-8",
-				headers : {
-					'Authorization' : sAuth
-				},
-				data : JSON.stringify(oData),
-				success : function(data, stat, xhdr) {
-					if (xhdr.status == '200') {
+						if (iStatus === 200) {
+							if (oObj.operation !== 'D') 
+							oController.callUserAssignmentUpdate(oObj, oController);
+							else 
+								{
+								sap.m.MessageToast.show("User has been deleted");
+								oController.fetchUsers();
+								}
+							
+		                   
+						}
+						 else sap.m.MessageToast.show("Error performing action!");
 						
-						// Update assignments;
 						
-						oController.callUserAssignmentUpdate(oData, oController);
 						
-					
-					} else if (xhdr.status == '500') {
-						sap.m.MessageToast.show("Error performing action!");
-					}
-				},
-				error : function(data, stat, xhdr) {
-					sap.m.MessageToast.show("Error performing action!");
-				}
-			});
+					});
 		},
 
 
 callUserAssignmentUpdate: function(oData, oController) {
 			
-			var sAuth = window.sessionStorage.getItem('Auth');
+	// var sAuth = window.sessionStorage.getItem('Auth');
 
 			switch (oController._sUserMode) {
 				case "C":
@@ -338,9 +322,10 @@ callUserAssignmentUpdate: function(oData, oController) {
 			}
 			
 			var aPartners = [];
-			
+			if (oData.user.partners) {
 			for (j=0; j<oData.user.partners.length; j++){
 				aPartners.push(oData.user.partners[j].partner.partnerid);
+			}
 			}
 			
 			var oObj = {
@@ -348,31 +333,49 @@ callUserAssignmentUpdate: function(oData, oController) {
 					partners: aPartners
 			};
 			
-			jQuery.ajax({
-				type : 'POST',
-				url : "/assignpartner",
-				dataType : "json",
-				contentType : "application/json; charset=utf-8",
-				headers : {
-					'Authorization' : sAuth
-				},
-				data : JSON.stringify(oObj),
-				success : function(data, stat, xhdr) {
-					if (xhdr.status == '200') {
+			
+			var oModel = oController.getView().getModel();
+			
+			oModel
+			.postData(
+					"/assignpartner",
+					oObj,
+					function(iStatus, oData) {
+
+						if (iStatus === 200) {
+							
+							var fChState = oController.changeUserPageState.bind(oController);
+							fChState("R");
+							
+							oController.fetchUsers();
+							sap.m.MessageToast.show(sMessage);
+						}
+						 else sap.m.MessageToast.show("Error performing action!");
 						
-						oController.changeUserPageState("R").bind(oController);					
-						oController.fetchUsers();
-						sap.m.MessageToast.show(sMessage);
 						
-	                
-					} else if (xhdr.status == '500') {
-						sap.m.MessageToast.show("Error performing action!");
-					}
-				},
-				error : function(data, stat, xhdr) {
-					sap.m.MessageToast.show("Error performing action!");
-				}
-			});
+						
+					});
+			
+			
+			
+			
+		},
+		
+		onSearchUser : function(evt) {
+
+			// add filter for search
+			var aFilters = [];
+			var sQuery = evt.getSource().getValue();
+			if (sQuery && sQuery.length > 0) {
+				var filter = new sap.ui.model.Filter("name",
+						sap.ui.model.FilterOperator.Contains, sQuery);
+				aFilters.push(filter);
+			}
+
+			// update list binding
+			var list = this.getView().byId("overviewUsers");
+			var binding = list.getBinding("items");
+			binding.filter(aFilters, "Application");
 		},
 	
 	/**
@@ -401,7 +404,12 @@ callUserAssignmentUpdate: function(oData, oController) {
 	}, 
 		
 	onBeforeRendering : function() {
+		
 		this.changePartnerPageState(this._sPartnerMode);
+		
+		this.fetchUsers();
+		this.fetchPartners();
+		
 	},
 	
 	onSubmitPartnerSH_Dlg: function() {

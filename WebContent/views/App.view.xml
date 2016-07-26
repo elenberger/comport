@@ -29,6 +29,7 @@
 
 			<Page id='pageCockpit' title="Communication Portal - Cockpit">
 				<headerContent>
+				    <Text text="{/access/user/name} ( {/access/user/userid} )" />
 					<Button  icon="sap-icon://settings" press="openSettings" visible = "{/access/ADMINISTRATOR}" />
 					<Button  icon="sap-icon://log" press="onLogout" />
 				</headerContent>
@@ -46,6 +47,7 @@
 
 			<Page id="pageAP" title="Accounts Payable" showNavButton="true" navButtonPress="navBack">
 				<headerContent>
+				    <Text text="{/access/user/name} ( {/access/user/userid} )" />
 					<Button id="onlogout" icon="sap-icon://log" press="onLogout" />
 				</headerContent>
 
@@ -69,6 +71,7 @@
 
 			<Page id="pageAR" title="Accounts Receivable" showNavButton="true" navButtonPress="navBack">
 				<headerContent>
+				    <Text text="{/access/user/name} ( {/access/user/userid} )" />
 					<Button  icon="sap-icon://log" press="onLogout" />
 				</headerContent>
 

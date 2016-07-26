@@ -11,6 +11,7 @@ sap.ui.model.json.JSONModel.extend("comport.model.AppModel", {
 		// success
 		function(data, stat, xhdr) {
 			oModel.setProperty("/access", data);
+			oModel.refresh();
 			callback(xhdr.status, data );
 		},
 		// Error
@@ -34,7 +35,21 @@ sap.ui.model.json.JSONModel.extend("comport.model.AppModel", {
 			callback(500);
 		});
 	},
-	
+
+	postData : function(sEndpoint, oData, callback) {
+		this._sAuth = sAuth;
+		var oModel = this;
+		
+		this._sendRequest("POST", sEndpoint, oData,
+		// success
+		function(data, stat, xhdr) {
+			callback(xhdr.status, data );
+		},
+		// Error
+		function(data, stat, xhdr) {
+			callback(500);
+		});
+	},
 	
 // ---private section
 	
@@ -52,6 +67,9 @@ sap.ui.model.json.JSONModel.extend("comport.model.AppModel", {
 			headers : {
 				'Authorization' : sAuth
 			},
+			dataType : "json",
+			contentType : "application/json; charset=utf-8",
+			data: JSON.stringify(oData),
 			success : function(data, stat, xhdr){
 				sap.ui.core.BusyIndicator.hide();
 				success(data, stat, xhdr);

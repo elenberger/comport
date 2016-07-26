@@ -6,6 +6,7 @@
 		class="sapUiSizeCompact" showNavButton="true" navButtonPress="onNavBack">
 
 		<semantic:customHeaderContent>
+		    <Text text="{/access/user/name} ( {/access/user/userid} )" />
 			<Button icon="sap-icon://home" press="onNavHome" />
 		</semantic:customHeaderContent>
 
@@ -113,22 +114,22 @@
 							labelSpanM="3" emptySpanL="4" emptySpanM="4" columnsL="1"
 							columnsM="1">
 							<Label text="Number" />
-							<Text text="{num}" />
+							<Text text="{invoicedetails/num}" />
 							<Label text="Date" />
-							<Text text="{date}" />
+							<Text text="{invoicedetails/date}" />
 							<Label text="Note" />
-							<Text text="{note}" />
+							<Text text="{invoicedetails/note}" />
 							<Label text="Currency" />
-							<Text text="{currency}" />
+							<Text text="{invoicedetails/currency}" />
 							<Label text="Net amount" />
-							<Text text="{netamount}" />
+							<Text text="{invoicedetails/netamount}" />
 							<Label text="VAT amount" />
-							<Text text="{vatamount}" />
+							<Text text="{invoicedetails/vatamount}" />
 
 						</f:SimpleForm>
 
 						<Table class="sapUiSizeCompact" headerText="Positions"
-							xmlns="sap.m" id="idTabPositions" items="{path: 'positions'}">
+							xmlns="sap.m" id="idTabPositions" items="{path: 'invoicedetails/positions'}">
 							<items>
 								<ColumnListItem>
 									<cells>

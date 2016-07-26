@@ -14,14 +14,19 @@ overview = function(req, res) {
 				var aProm = [];
 				var oRes = {};
 
+				
+				
+				
 				// Partners
 				if (oUser.partners) {
 					for (var i = 0; i < oUser.partners.length; i++) {
 						aPartners.push(oUser.partners[i].partner.partnerid);
 					}
 				}
+
 				if (aPartners.length == 0)
-					res.end({});
+					
+					return res.end({});
 
 				// Roles
 				if (oUser.roles) {
