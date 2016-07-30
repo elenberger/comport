@@ -86,7 +86,7 @@ approveOrder = function(req, res, oOrder) {
 							if (sPartnerid) {
 								oResStep.resdate = Date.now();
 								oResStep.resolver = oUser.userid;
-								
+
 								bSuccess = true;
 								if (req.body.order.note) {
 									oResStep.note = req.body.order.note;
@@ -110,14 +110,17 @@ approveOrder = function(req, res, oOrder) {
 								}
 								if (!oOrder.approval[a].resdate
 										&& oOrder.approval[a].steptype == 'N') {
-																		
+
 									oOrder.approval[a].resdate = Date.now();
 									oOrder.approval[a].resolver = 'automatically';
-									
+
 									// Notification\email
-									var oMailParams = {num: oOrder.num, partnerid: oOrder.partnerid, sendto: oOrder.approval[a].partnerid}
-								    
-									
+									var oMailParams = {
+										num : oOrder.num,
+										partnerid : oOrder.partnerid,
+										sendto : oOrder.approval[a].partnerid
+									}
+
 								}
 							}
 						}
@@ -133,12 +136,12 @@ approveOrder = function(req, res, oOrder) {
 						//
 
 						if (bSuccess) {
-							
+
 							if (oMailParams) {
 								oMailParams.stat = oOrder.stat;
 								emailer.sendOrderInfoMsg(req, oMailParams);
 							}
-							
+
 							oOrder
 									.save(function(err) {
 										if (err) {
@@ -170,12 +173,11 @@ approveOrder = function(req, res, oOrder) {
 
 approveInvoice = function(req, res, oInvoice) {
 
-
 	approveDoc(req, oInvoice).then(
 	// resolve
-	function(oMsg) {
+	function(oDoc) {
 
-		oInvoice.save(function(err) {
+		oDoc.save(function(err) {
 			if (err)
 				return res.status(500).send({
 					"message" : "Operation cancelled"
@@ -198,10 +200,10 @@ approveInvoice = function(req, res, oInvoice) {
 approveDoc = function(req, oDoc) {
 
 	return new Promise(function(resolve, reject) {
-        
+
 		var sUserid = basicAuth(req).name;
-		
-        if (oDoc.stat !== 'Approval')
+
+		if (oDoc.stat !== 'Approval')
 			reject({
 				"error" : "document is not in approval step"
 			});
@@ -260,21 +262,17 @@ approveDoc = function(req, oDoc) {
 
 					// Update document status
 
-					if (bSuccess && bCompleted) {
+					if (bSuccess && bCompleted)
 						oDoc.stat = "Approved";
-					} else if (bSuccess && sOper == 'R') {
+					else if (bSuccess && sOper == 'R')
 						oDoc.stat = "Rejected";
-					}
 
-					if (bSuccess) {
-						resolve({
-							"message" : "Operation completed successfully"
-						});
-					} else {
+					if (bSuccess)
+						resolve(oDoc);
+					else
 						reject({
 							"message" : "Operation cancelled"
 						});
-					}
 
 				});
 	});
