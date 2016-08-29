@@ -6,6 +6,8 @@ var workflowsModel = require('./dbwrapper').workflowsModel;
 
 var rest = require('./restcallwrapper');
 
+var emailer = require('./emailer');
+
 var mPartner = require('./partners');
 
 var getUser = require('./users').getUser;
@@ -23,7 +25,7 @@ maintainInvoice = function(req, res) {
 	}
 
 	if (!sOper || !sInvoicenum || !sPartnerid || !sOrder) {
-		return res.status(500).send({
+		return res.status(200).send({
 			"error" : "Wrong message format"
 		});
 	}
@@ -35,7 +37,7 @@ maintainInvoice = function(req, res) {
 	}).exec(function(err, invoice) {
 
 		if (err)
-			return res.status(500).send({
+			return res.status(200).send({
 				"error" : "Error while creating invoice"
 			});
 
@@ -43,12 +45,12 @@ maintainInvoice = function(req, res) {
 
 		case "C":
 			if (invoice) {
-				return res.status(500).send({
+				return res.status(200).send({
 					"error" : "Invoice exists!"
 				});
 			}
 
-			addInvoice(req.body.invoice, res);
+			addInvoice(req.body.invoice, req, res);
 
 			break;
 		case "U":
@@ -58,7 +60,7 @@ maintainInvoice = function(req, res) {
 				invoice.remove(function(err, removed) {
 				});
 			}
-			addInvoice(req.body.invoice, res);
+			addInvoice(req.body.invoice, req, res);
 
 			break;
 		case "D":
@@ -80,15 +82,14 @@ maintainInvoice = function(req, res) {
 			sendInvoiceExt(req, res);
 			break;
 		default:
-			return res.status(500).send({
+			return res.status(200).send({
 				"error" : "Wrong message format"
 			});
 
 		}
-
 	});
-
 };
+
 
 findPartyPartnerId = function(aParties, sRole) {
 	for (i = 0; i < aParties.length; i++) {
@@ -99,7 +100,7 @@ findPartyPartnerId = function(aParties, sRole) {
 	return "";
 };
 
-addInvoice = function(oInvoice, res) {
+addInvoice = function(oInvoice, req, res) {
 
 	// logic before save
 
@@ -110,11 +111,14 @@ addInvoice = function(oInvoice, res) {
 					'length for number is invalid', 'notvalid', this.num);
 			return next(error);
 		}
-
-		this.stat = 'Approval';
+        if (!this.stat) this.stat = 'Approval';
 
 		var oInvoice = this;
 
+        //in case appoval already here - skip next code
+        if (oInvoice.approval.length > 0) return next();
+        
+        
 		// init approval procedure
 
 		workflowsModel.findOne({
@@ -140,6 +144,18 @@ addInvoice = function(oInvoice, res) {
 
 						if (i == 0) {
 							oInvoiceWorkflowStep.approve = true;
+
+                // data for email
+                var oMailParams = {
+                  num : oInvoice.num,
+                  partnerid : oInvoice.partnerid,
+                  sendto : oInvoiceWorkflowStep.partnerid,
+                  doctype : 'Invoice'
+                }
+								//send email async
+								setTimeout(function(){
+								emailer.sendDocApproveMsg(req, oMailParams)}, 10000);
+
 						}
 
 						oInvoice.approval.push(oInvoiceWorkflowStep);
@@ -348,6 +364,9 @@ _getInvoice = function(oInvoice) {
 
 		var aPromises = [];
 
+    //Modify status text
+    if (oInvoice.stat === 'Approval') oInvoice.stat = 'Pending approval';
+
 		// partnername
 		aPromises.push(mPartner.getPartnerById(oInvoice.partnerid).then(
 				function(oPartner) {
@@ -442,9 +461,9 @@ getInvoiceExtSys = function(sId) {
 
 // Send Invoice to external system
 sendInvoiceExt = function(req, res) {
-	
+
 	"use strict";
-	
+
 	// at first get invoice from remote system(we require it as have no position
 	// in comport)
 
@@ -469,7 +488,7 @@ sendInvoiceExt = function(req, res) {
 		oObject.refnum    = oInvoice.order;
 
 		oObject.positions = [];
-		
+
 		for (var j = 0; j < oInvoice.positions.length; j++) {
 			oObject.positions.push({
 				text : oInvoice.positions[j].postxt,
@@ -482,16 +501,16 @@ sendInvoiceExt = function(req, res) {
 		rest.performPostRequestSAP("/sap/bc/rest/z_comport/incinvoices", oObject,
 		// success
 		function(oResponse) {
-           
-			var oUpdate = { 
+
+			var oUpdate = {
 					stat: "Sent",
 					lastMsg: "",
 					partnerid: oInvoice.partnerid,
 					num: oInvoice.num
 					};
-			
+
 			for (let oMsg of oResponse.response) {
-				if (oMsg.type = 'E'){ 
+				if (oMsg.type = 'E'){
 					oUpdate.stat = 'Error';
 				     oUpdate.lastMsg = oMsg.message;
 				     break;
@@ -502,7 +521,7 @@ sendInvoiceExt = function(req, res) {
 			updateInvoiceStatus(oUpdate);
 
 			return res.status(200).send(JSON.stringify(oUpdate));
-			
+
 
 		},
 		// on error Receiver
@@ -534,17 +553,17 @@ updateInvoiceStatus = function(oUpdate) {
 	var oInvObjectNew = {
 		  stat: oUpdate.stat,
 		  lasterr: oUpdate.lastMsg
-	
+
 	};
-	
+
 	invoicesModel.findOneAndUpdate(
 			{partnerid: oUpdate.partnerid,
-				   num: oUpdate.num},			
+				   num: oUpdate.num},
 			oInvObjectNew,
 			{new: true},
 	function(err, oUpdInvoice) {
 		// TODO: check if invoice was updated
-			}		
+			}
 	);
 };
 

@@ -16,433 +16,437 @@ var ValidatorError = mongoose.Error.ValidatorError;
 // Route order operation(C-Create, U-update, D-Delete, A-Approve, R-Reject )
 
 maintainOrder = function(req, res) {
-	// get operation, num and partnerid from request.
+    // get operation, num and partnerid from request.
 
-	var sOper = req.body.operation;
+    var sOper = req.body.operation;
 
-	if (req.body.order) {
-		var sOrdernum = req.body.order.num;
-		var sPartnerid = req.body.order.partnerid;
-	}
+    if (req.body.order) {
+        var sOrdernum = req.body.order.num;
+        var sPartnerid = req.body.order.partnerid;
+    }
 
-	if (!sOper || !sOrdernum || !sPartnerid) {
-		return res.status(500).send({
-			"error" : "Wrong message format"
-		});
-	}
+    if (!sOper || !sOrdernum || !sPartnerid) {
+        return res.status(500).send({
+            "error": "Wrong message format"
+        });
+    }
 
-	// find order and check status.
-	ordersModel.findOne({
-		partnerid : sPartnerid,
-		num : sOrdernum
-	}).exec(function(err, order) {
+    // find order and check status.
+    ordersModel.findOne({
+        partnerid: sPartnerid,
+        num: sOrdernum
+    }).exec(function(err, order) {
 
-		switch (sOper) {
+        switch (sOper) {
 
-		case "C":
-			if (order) {
-				return res.status(500).send({
-					"error" : "Order exists!"
-				});
-			}
+            case "C":
+                if (order) {
+                    return res.status(500).send({
+                        "error": "Order exists!"
+                    });
+                }
 
-			addOrder(req.body.order, req, res);
+                addOrder(req.body.order, req, res);
 
-			break;
-		case "U":
-			// remove old order and create new
-			if (order) {
-				order.remove(function(err, removed) {
-				});
-			}
-			addOrder(req.body.order, req, res);
+                break;
+            case "U":
+                // remove old order and create new
+                if (order) {
+                    order.remove(function(err, removed) {});
+                }
+                addOrder(req.body.order, req, res);
 
-			break;
-		case "D":
-			if (order) {
-				order.remove(function(err, removed) {
-					res.end();
-				});
-			} else {
-				res.send({
-					"error" : "Order doesn't exists"
-				});
-			}
-			break;
-		case "A":
-		case "R":
-			approveOrder(req, res, order);
-			break;
+                break;
+            case "D":
+                if (order) {
+                    order.remove(function(err, removed) {
+                        res.end();
+                    });
+                } else {
+                    res.send({
+                        "error": "Order doesn't exists"
+                    });
+                }
+                break;
+            case "A":
+            case "R":
+                approveOrder(req, res, order);
+                break;
 
-		default:
-			return res.status(500).send({
-				"error" : "Wrong message format"
-			});
+            default:
+                return res.status(500).send({
+                    "error": "Wrong message format"
+                });
 
-		}
+        }
 
-	});
+    });
 
 };
 
 addOrder = function(oOrder, req, res) {
 
-	ordersModel.schema.pre('save', function(next) {
-		if (this.num.length > 10) {
-			var error = new ValidationError(this);
-			error.errors.num = new ValidatorError('num',
-					'length for number is invalid', 'notvalid', this.num);
-			return next(error);
-		}
+    ordersModel.schema.pre('save', function(next) {
+        if (this.num.length > 10) {
+            var error = new ValidationError(this);
+            error.errors.num = new ValidatorError('num',
+                'length for number is invalid', 'notvalid', this.num);
+            return next(error);
+        }
 
-		this.stat = 'Approval';
+        if (!this.stat) this.stat = 'Approval';
 
-		var oOrder = this;
+        var oOrder = this;
 
-		// init approval procedure
+        //in case appoval already here - skip next code
+        if (oOrder.approval.length > 0) return next();
+        
+            
+        // init approval procedure
+        workflowsModel.findOne({
+            wfid: "dummy"
+        }).lean().exec(
+            function(err, workflow) {
+                if (err || !workflow) {
+                    console.log(err);
+                    return res.end({
+                        "error": "No workflow template found"
+                    });
+                }
 
-		workflowsModel.findOne({
-			wfid : "dummy"
-		}).lean().exec(
-				function(err, workflow) {
-					if (err || !workflow) {
-						console.log(err);
-						return res.end({
-							"error" : "No workflow template found"
-						});
-					}
+                var aSteps = workflow.steps;
 
-					var aSteps = workflow.steps;
+                oOrder.approval.length = 0;
 
-					oOrder.approval.length = 0;
+                for (var i = 0; i < aSteps.length; i++) {
+                    var oOrderWorkflowStep = {};
 
-					for (var i = 0; i < aSteps.length; i++) {
-						var oOrderWorkflowStep = {};
+                    oOrderWorkflowStep.stepno = i + 1;
+                    oOrderWorkflowStep.steptype = aSteps[i].steptype;
+                    oOrderWorkflowStep.partnerid = findPartyPartnerId(
+                        oOrder.parties, aSteps[i].role);
 
-						oOrderWorkflowStep.stepno = i + 1;
-						oOrderWorkflowStep.steptype = aSteps[i].steptype;
-						oOrderWorkflowStep.partnerid = findPartyPartnerId(
-								oOrder.parties, aSteps[i].role);
+                    if (i === 0) {
+                        oOrderWorkflowStep.approve = true;
 
-						if (i === 0) {
-							oOrderWorkflowStep.approve = true;
+                        // data for email
+                        var oMailParams = {
+                            num: oOrder.num,
+                            partnerid: oOrder.partnerid,
+                            sendto: oOrderWorkflowStep.partnerid,
+                            doctype: 'Order'
+                        }
 
-							// data for email
-							var oMailParams = {
-								num : oOrder.num,
-								partnerid : oOrder.partnerid,
-								sendto : oOrderWorkflowStep.partnerid
-							}
-							emailer.sendOrderApproveMsg(req, oMailParams);
-						}
+                        //send email async
+                        setTimeout(function(){
+                        emailer.sendDocApproveMsg(req, oMailParams)}, 10000);
+                    }
 
-						oOrder.approval.push(oOrderWorkflowStep);
-					}
+                    oOrder.approval.push(oOrderWorkflowStep);
+                }
 
-					// Last step is notification to order owner
-					var oOrderWorkflowStep = {
-						stepno : i + 1,
-						steptype : "N",
-						partnerid : oOrder.partnerid
-					};
-					oOrder.approval.push(oOrderWorkflowStep);
+                // Last step is notification to order owner
+                var oOrderWorkflowStep = {
+                    stepno: i + 1,
+                    steptype: "N",
+                    partnerid: oOrder.partnerid
+                };
+                oOrder.approval.push(oOrderWorkflowStep);
 
-					next();
-				});
+                next();
+            });
 
-	});
+    });
 
-	ordersModel.create(oOrder, function(err, order) {
+    ordersModel.create(oOrder, function(err, order) {
 
-		if (err) {
-			console.log(err);
-			return res.send(err)
-		}
+        if (err) {
+            console.log(err);
+            return res.send(err)
+        }
 
-		return res.send(order);
+        return res.send(order);
 
-	});
+    });
 
 };
 
 getOwnOrders = function(req, res) {
 
-	res.setHeader("Content-Type", "application/json");
+    res.setHeader("Content-Type", "application/json");
 
-	// get partnerid's which can see user.
-	getUser(req).then(function(oUser) {
-		var aPartners = [];
-		if (oUser.partners) {
-			for (i = 0; i < oUser.partners.length; i++) {
-				aPartners.push(oUser.partners[i].partner.partnerid);
-			}
-		}
+    // get partnerid's which can see user.
+    getUser(req).then(function(oUser) {
+        var aPartners = [];
+        if (oUser.partners) {
+            for (i = 0; i < oUser.partners.length; i++) {
+                aPartners.push(oUser.partners[i].partner.partnerid);
+            }
+        }
 
-		if (aPartners.length == 0)
-			return res.end();
+        if (aPartners.length == 0)
+            return res.end();
 
-		ordersModel.find({
-			partnerid : {
-				$in : aPartners
-			}
-		}).lean().exec(function(err, orders) {
+        ordersModel.find({
+            partnerid: {
+                $in: aPartners
+            }
+        }).lean().exec(function(err, orders) {
 
-			if (err)
-				return res.end(err);
+            if (err)
+                return res.end(err);
 
-			// add some fields in order
+            // add some fields in order
 
-			var pOrders = new Promise(function(resolve, reject) {
-				var aProm = [];
-				for (var s = 0; s < orders.length; s++) {
-					var oDoc = orders[s];
+            var pOrders = new Promise(function(resolve, reject) {
+                var aProm = [];
+                for (var s = 0; s < orders.length; s++) {
+                    var oDoc = orders[s];
 
-					aProm.push(_getOrder(oDoc));
+                    aProm.push(_getOrder(oDoc));
 
-				}
+                }
 
-				Promise.all(aProm).then(function(aDocs) {
-					resolve(orders);
-				});
+                Promise.all(aProm).then(function(aDocs) {
+                    resolve(orders);
+                });
 
-			});
+            });
 
-			pOrders.then(function(orders) {
+            pOrders.then(function(orders) {
 
-				// final corrections
-				for (d = 0; d < orders.length; d++) {
-					orders[d].approvable = false;
-				}
+                // final corrections
+                for (d = 0; d < orders.length; d++) {
+                    orders[d].approvable = false;
+                }
 
-				// return results
-				res.write(JSON.stringify({docs: orders}));
-				return res.end();
-			});
+                // return results
+                res.write(JSON.stringify({
+                    docs: orders
+                }));
+                return res.end();
+            });
 
-		});
-	});
+        });
+    });
 };
 
 _getOrder = function(oOrder) {
 
-	return new Promise(function(resolve, reject) {
+    return new Promise(function(resolve, reject) {
 
-		getPartnerById(oOrder.partnerid).then(function(oPartner) {
-			oOrder.partnername = oPartner.partnername;
+        getPartnerById(oOrder.partnerid).then(function(oPartner) {
+            oOrder.partnername = oPartner.partnername;
 
-			_getOrderParties(oOrder.parties).then(function(aParties) {
-				oOrder.parties = aParties;
+            //    transform status
+            if (oOrder.stat === 'Approval') oOrder.stat = 'Pending approval';
 
-				_getOrderApprovals(oOrder.approval).then(function(aApprovals) {
-					oOrder.approval = aApprovals;
-					resolve(oOrder);
-				});
+            _getOrderParties(oOrder.parties).then(function(aParties) {
+                oOrder.parties = aParties;
 
-			});
-		});
-	});
+                _getOrderApprovals(oOrder.approval).then(function(aApprovals) {
+                    oOrder.approval = aApprovals;
+                    resolve(oOrder);
+                });
+
+            });
+        });
+    });
 };
 
 _getOrderParties = function(aParties) {
 
-	return new Promise(function(resolve, reject) {
-		var bLast = false;
+    return new Promise(function(resolve, reject) {
+        var bLast = false;
 
-		for (var p = 0; p < aParties.length; p++) {
-			var oParty = aParties[p];
+        for (var p = 0; p < aParties.length; p++) {
+            var oParty = aParties[p];
 
-			if (p == aParties.length - 1) {
-				bLast = true
-			}
+            if (p == aParties.length - 1) {
+                bLast = true
+            }
 
-			getPartnerById(oParty.partnerid).then(function(oPartner) {
-				oParty.partnername = oPartner.partnername;
+            getPartnerById(oParty.partnerid).then(function(oPartner) {
+                oParty.partnername = oPartner.partnername;
 
-				if (bLast) {
+                if (bLast) {
 
-					resolve(aParties);
-				}
-			});
+                    resolve(aParties);
+                }
+            });
 
-		}
-	});
+        }
+    });
 };
 
 // process approval array
-_getOrderApprovals = function(aApprovals) {
+_getOrderApprovals = function(aInputApprovals) {
 
-	return new Promise(
-			function(resolve, reject) {
+    return new Promise(
+        function(resolve, reject) {
 
-				var aStepProm = [];
-				var bActiveStepFound = false;
+         var aApprovals = aInputApprovals;
 
-				for (var a = 0; a < aApprovals.length; a++) {
+//         determine active approval step
+            var bActiveStepFound = false;
+            for (var a = 0; a < aApprovals.length; a++) {
+                aApprovals[a].approve = false;
+                if (!aApprovals[a].resdate) {
+                    if (!bActiveStepFound) {
+                        bActiveStepFound = true;
+                        aApprovals[a].approve = true;
+                    }
+                }
+            }
 
-					var oStepProm = new Promise(
-							function(resolve, reject) {
-								var oApprovalStep = aApprovals[a];
-								getPartnerById(oApprovalStep.partnerid)
-										.then(
-												function(oPartner) {
+//         fill additional fields
 
-													oApprovalStep.partnername = oPartner.partnername;
+					 var aStepProm = [];
+						for (var a = 0; a < aApprovals.length; a++) {
 
-													// if
-													// (oApprovalStep.steptype
-													// == 'A') {
-													// oApprovalStep.steptype =
-													// 'Approval by: ';
-													// } else if
-													// (oApprovalStep.steptype
-													// == 'N') {
-													// oApprovalStep.steptype =
-													// 'Notification to: ';
-													// }
+                var oStepProm = new Promise(
+                    function(resolve, reject) {
+                        var oApprovalStep = aApprovals[a];
+                        getPartnerById(oApprovalStep.partnerid)
+                            .then(
+                                function(oPartner) {
+                                    oApprovalStep.partnername = oPartner.partnername;
+																		resolve(oApprovalStep);
+                                });
+                    });
 
-													oApprovalStep.approve = false;
+                aStepProm.push(oStepProm);
+            }
 
-													if (!oApprovalStep.resdate
-															&& !bActiveStepFound) {
-														oApprovalStep.approve = bActiveStepFound = true;
+            Promise.all(aStepProm).then(function(oApprovalSteps) {
+                resolve(aApprovals);
+            });
 
-													}
-
-													resolve(oApprovalStep);
-												});
-							});
-
-					aStepProm.push(oStepProm);
-
-				}
-
-				Promise.all(aStepProm).then(function(oApprovalSteps) {
-					resolve(oApprovalSteps);
-				});
-
-			});
+        });
 };
 
 // Order from remote system
 getOrderDetails = function(req, res) {
 
-	// Object to retrieve and push Order details
-	res.setHeader("Content-Type", "application/json");
+    // Object to retrieve and push Order details
+    res.setHeader("Content-Type", "application/json");
 
-	var sId = req.params.num;
+    var sId = req.params.num;
 
-	rest.performGetRequest("/sap/bc/rest/z_comport/po/" + sId, "",
-	// success
-	function(bkndres) {
+    rest.performGetRequest("/sap/bc/rest/z_comport/po/" + sId, "",
+        // success
+        function(bkndres) {
 
-		res.write(JSON.stringify({
-			orderDetails : bkndres.order
-		}));
+            res.write(JSON.stringify({
+                orderDetails: bkndres.order
+            }));
 
-		return res.end();
+            return res.end();
 
-	},
-	// on error
-	function(error) {
-		return res.status(500).send({
-			"error" : "Error while requesting data from backend"
-		});
+        },
+        // on error
+        function(error) {
+            return res.status(500).send({
+                "error": "Error while requesting data from backend"
+            });
 
-	});
+        });
 
 };
 
-//  
+//
 findPartyPartnerId = function(aParties, sRole) {
-	for (i = 0; i < aParties.length; i++) {
-		if (sRole == aParties[i].role) {
-			return aParties[i].partnerid;
-		}
-	}
-	return "";
+    for (i = 0; i < aParties.length; i++) {
+        if (sRole == aParties[i].role) {
+            return aParties[i].partnerid;
+        }
+    }
+    return "";
 };
 
 getIncOrders = function(req, res) {
 
-	res.setHeader("Content-Type", "application/json");
+    res.setHeader("Content-Type", "application/json");
 
-	// get partnerid's which can see user.
-	getUser(req).then(function(oUser) {
-		var aPartners = [];
-		if (oUser.partners) {
-			for (i = 0; i < oUser.partners.length; i++) {
-				aPartners.push(oUser.partners[i].partner.partnerid);
-			}
-		}
+    // get partnerid's which can see user.
+    getUser(req).then(function(oUser) {
+        var aPartners = [];
+        if (oUser.partners) {
+            for (i = 0; i < oUser.partners.length; i++) {
+                aPartners.push(oUser.partners[i].partner.partnerid);
+            }
+        }
 
-		if (aPartners.length == 0)
-			return res.end();
+        if (aPartners.length == 0)
+            return res.end();
 
-		ordersModel.find({
-			'parties.partnerid' : {
-				$in : aPartners
-			}
-		}).lean().exec(function(err, orders) {
+        ordersModel.find({
+            'parties.partnerid': {
+                $in: aPartners
+            }
+        }).lean().exec(function(err, orders) {
 
-			if (err)
-				return res.end(err);
+            if (err)
+                return res.end(err);
 
-			// add some fields into order
+            // add some fields into order
 
-			var pOrders = new Promise(function(resolve, reject) {
-				var aProm = [];
-				for (var s = 0; s < orders.length; s++) {
-					var oDoc = orders[s];
+            var pOrders = new Promise(function(resolve, reject) {
+                var aProm = [];
+                for (var s = 0; s < orders.length; s++) {
+                    var oDoc = orders[s];
 
-					aProm.push(_getOrder(oDoc));
+                    aProm.push(_getOrder(oDoc));
 
-				}
+                }
 
-				Promise.all(aProm).then(function(aDocs) {
-					resolve(orders);
-				});
+                Promise.all(aProm).then(function(aDocs) {
+                    resolve(orders);
+                });
 
-			});
+            });
 
-			pOrders.then(function(orders) {
+            pOrders.then(function(orders) {
 
-				// final corrections, calculate if document approvable
-				for (var d = 0; d < orders.length; d++) {
-					var oOrder = orders[d];
-					oOrder.approvable = false;
+                // final corrections, calculate if document approvable
+                for (var d = 0; d < orders.length; d++) {
+                    var oOrder = orders[d];
+                    oOrder.approvable = false;
 
-					var oRes = oOrder.approval.find(function(oApprovalStep) {
-						if (oApprovalStep.approve) {
-							return oApprovalStep
-						}
-					});
+                    var oRes = oOrder.approval.find(function(oApprovalStep) {
+                        if (oApprovalStep.approve) {
+                            return oApprovalStep
+                        }
+                    });
 
-					if (oRes) {
-						var sPartnerid = aPartners.find(function(sPartnerid) {
-							if (sPartnerid == oRes.partnerid) {
-								return sPartnerid;
-							}
-						});
-						if (sPartnerid) {
-							oOrder.approvable = true;
-						}
-					}
+                    if (oRes) {
+                        var sPartnerid = aPartners.find(function(sPartnerid) {
+                            if (sPartnerid == oRes.partnerid) {
+                                return sPartnerid;
+                            }
+                        });
+                        if (sPartnerid) {
+                            oOrder.approvable = true;
+                        }
+                    }
 
-				}
+                }
 
-				// return results
-				res.write(JSON.stringify({docs: orders}));
-				return res.end();
-			});
+                // return results
+                res.write(JSON.stringify({
+                    docs: orders
+                }));
+                return res.end();
+            });
 
-		});
+        });
 
-	});
+    });
 
 };
 
 orderApprove = function(sAction, oOrder) {
-	// {operation, order:{partnerid num note}}
+    // {operation, order:{partnerid num note}}
 }
 
 module.exports.maintainOrder = maintainOrder;

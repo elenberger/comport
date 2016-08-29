@@ -4,278 +4,197 @@ var getUser = require('./users').getUser;
 var mUser = require('./users');
 
 // process approval array
-getDocApprovals = function(aApprovals) {
+getDocApprovals = function(aInputApprovals) {
 
-	return new Promise(
-			function(resolve, reject) {
+    return new Promise(
+        function(resolve, reject) {
 
-				var aStepProm = [];
-				var bActiveStepFound = false;
+            var aApprovals = aInputApprovals;
 
-				for (var a = 0; a < aApprovals.length; a++) {
+            //         determine active approval step
+            var bActiveStepFound = false;
+            for (var a = 0; a < aApprovals.length; a++) {
+                aApprovals[a].approve = false;
+                if (!aApprovals[a].resdate) {
+                    if (!bActiveStepFound) {
+                        bActiveStepFound = true;
+                        aApprovals[a].approve = true;
+                    }
+                }
+            }
 
-					var oStepProm = new Promise(
-							function(resolve, reject) {
-								var oApprovalStep = aApprovals[a];
-								getPartnerById(oApprovalStep.partnerid)
-										.then(
-												function(oPartner) {
+            //         fill additional fields
+            var aStepProm = [];
+            for (var a = 0; a < aApprovals.length; a++) {
 
-													oApprovalStep.partnername = oPartner.partnername;
-													oApprovalStep.approve = false;
+                var oStepProm = new Promise(
+                    function(resolve, reject) {
+                        var oApprovalStep = aApprovals[a];
+                        getPartnerById(oApprovalStep.partnerid)
+                            .then(
+                                function(oPartner) {
+                                    oApprovalStep.partnername = oPartner.partnername;
+                                    resolve(oApprovalStep);
+                                });
+                    });
 
-													if (!oApprovalStep.resdate
-															&& !bActiveStepFound) {
-														oApprovalStep.approve = bActiveStepFound = true;
+                aStepProm.push(oStepProm);
+            }
 
-													}
-
-													resolve(oApprovalStep);
-												});
-							});
-
-					aStepProm.push(oStepProm);
-
-				}
-
-				Promise.all(aStepProm).then(function(oApprovalSteps) {
-					resolve(oApprovalSteps);
-				});
-
-			});
+            Promise.all(aStepProm).then(function(oApprovalSteps) {
+                resolve(aApprovals);
+            });
+        });
 };
 
 approveOrder = function(req, res, oOrder) {
 
-	if (oOrder.stat !== 'Approval') {
-		return res.status(500).send({
-			"message" : "Operation is not possible"
-		});
-	}
+    // adapt object from request
 
-	var bSuccess = false;
-	var sOper = req.body.operation;
+    var oMessage = {
+        operation: req.body.operation,
+        note: req.body.order.note
+    }
 
-	var oResStep = oOrder.approval.find(function(oApprovalStep) {
-		if (!oApprovalStep.resdate && oApprovalStep.steptype == 'A') {
+    approveDoc(req, oMessage, oOrder).then(
+        // resolve
+        function(oMsg) {
+            res.status(200).send(oMsg);
+            setTimeout(function() {
+                _sendEmail(req, oOrder);
+            }, 10000);
 
-			return oApprovalStep;
-
-		}
-	});
-
-	if (!oResStep) {
-		res.status(200).send({
-			"message" : "Operation cancelled"
-		});
-	}
-
-	getUser(req)
-			.then(
-					function(oUser) {
-						if (oUser.partners) {
-
-							var sPartnerid = oUser.partners
-									.find(function(oUserPartner) {
-										if (oUserPartner.partner.partnerid == oResStep.partnerid) {
-											return oUserPartner.partner.partnerid;
-										}
-									});
-
-							// If order ready to be approved
-							if (sPartnerid) {
-								oResStep.resdate = Date.now();
-								oResStep.resolver = oUser.userid;
-
-								bSuccess = true;
-								if (req.body.order.note) {
-									oResStep.note = req.body.order.note;
-								}
-
-							}
-
-						}
-
-						// if Approve-> following actions
-
-						if (sOper == 'A') {
-							var bCompleted = true;
-
-							for (var a = 0; a < oOrder.approval.length; a++) {
-
-								if (!oOrder.approval[a].resdate
-										&& oOrder.approval[a].steptype == 'A') {
-									bCompleted = false;
-									break;
-								}
-								if (!oOrder.approval[a].resdate
-										&& oOrder.approval[a].steptype == 'N') {
-
-									oOrder.approval[a].resdate = Date.now();
-									oOrder.approval[a].resolver = 'automatically';
-
-									// Notification\email
-									var oMailParams = {
-										num : oOrder.num,
-										partnerid : oOrder.partnerid,
-										sendto : oOrder.approval[a].partnerid
-									}
-
-								}
-							}
-						}
-
-						// Update order status
-
-						if (bSuccess && bCompleted) {
-							oOrder.stat = "Approved";
-						} else if (bSuccess && sOper == 'R') {
-							oOrder.stat = "Rejected";
-						}
-
-						//
-
-						if (bSuccess) {
-
-							if (oMailParams) {
-								oMailParams.stat = oOrder.stat;
-								emailer.sendOrderInfoMsg(req, oMailParams);
-							}
-
-							oOrder
-									.save(function(err) {
-										if (err) {
-											res
-													.status(500)
-													.send(
-															{
-																"message" : "Operation cancelled"
-															});
-										}
-										res
-												.status(200)
-												.send(
-														{
-															"message" : "Operation completed successfully"
-														});
-
-									});
-
-						} else {
-							res.status(500).send({
-								"message" : "Operation cancelled"
-							});
-						}
-
-					});
-
+        },
+        // reject
+        function(oErr) {
+            return res.status(200).send(oErr);
+        });
 };
 
 approveInvoice = function(req, res, oInvoice) {
+    // adapt object from request
 
-	approveDoc(req, oInvoice).then(
-	// resolve
-	function(oDoc) {
+    var oMessage = {
+        operation: req.body.operation,
+        note: req.body.invoice.note
+    }
 
-		oDoc.save(function(err) {
-			if (err)
-				return res.status(500).send({
-					"message" : "Operation cancelled"
-				});
+    approveDoc(req, oMessage, oInvoice).then(
+        // resolve
+        function(oMsg) {
+            res.status(200).send(oMsg);
+            setTimeout(function() {
+                _sendEmail(req, oInvoice);
+            }, 10000);
+        },
+        // reject
+        function(oErr) {
+            return res.status(200).send(oErr);
+        });
+};
 
-			return res.status(200).send({
-				"message" : "Operation completed successfully"
-			});
-		});
-	},
-	// reject
-	function(oErr) {
-		return res.status(500).send({
-			"message" : "Operation cancelled"
-		});
-	});
+approveDoc = function(req, oMessage, oDoc) {
+
+    return new Promise(function(resolve, reject) {
+        var sUserid = basicAuth(req).name;
+
+        if (oDoc.stat !== 'Approval')
+            return reject({
+                "error": "document is not in approval step"
+            });
+
+        var oResStep = oDoc.approval.find(function(oApprovalStep) {
+
+            if (!oApprovalStep.resdate && oApprovalStep.steptype === 'A') return oApprovalStep;
+
+        });
+
+        if (!oResStep)
+            return reject({
+                "error": "document is not in approval step"
+            });
+
+        mUser.validatePartner(req, oResStep.partnerid).then(
+            function(bAllowed) {
+
+         
+                if (!bAllowed) return reject({
+                    "error": "You are not allowed to approve document"
+                });
+
+                //Resolve workflow item
+                oResStep.resdate = Date.now();
+                oResStep.resolver = sUserid;
+
+                if (oMessage.note)
+                    oResStep.note = oMessage.note;
+
+
+                // execute follow actions, complete WF
+
+                var bCompleted = true;
+                for (var a = 0; a < oDoc.approval.length; a++) {
+
+                    // If one More Approval step
+                    if (!oDoc.approval[a].resdate &&
+                        oDoc.approval[a].steptype === 'A') {
+                        bCompleted = false;
+                        break;
+                    }
+
+                    //Notification step
+                    if (!oDoc.approval[a].resdate &&
+                        oDoc.approval[a].steptype === 'N') {
+                        // Notification\email should be send here
+                        oDoc.approval[a].resdate = Date.now();
+                        oDoc.approval[a].resolver = sUserid;
+                    }
+                }
+
+                // Update document status
+
+                if (bCompleted && oMessage.operation === 'A')
+                    oDoc.stat = "Approved";
+                else if (oMessage.operation === 'R')
+                    oDoc.stat = "Rejected";
+
+                //save, send email and exit
+                
+                oDoc.save(function(err) {
+                    if (err)
+                        return reject({
+                            "error": "Operation cancelled"
+                        });
+
+                    //resolve will finish response and we will send mail afterwards
+                    resolve({
+                        "message": "Operation completed successfully"
+                    });
+
+                });
+            });
+    });
 
 };
 
-approveDoc = function(req, oDoc) {
+_sendEmail = function(req, oDoc) {
 
-	return new Promise(function(resolve, reject) {
+    //email to Owner with new document status, send async
+    var oMailParams = {
+        num: oDoc.num,
+        partnerid: oDoc.partnerid,
+        sendto: oDoc.partnerid,
+        stat: oDoc.stat,
+        doctype: 'Document'
+    }
 
-		var sUserid = basicAuth(req).name;
+    if (oDoc.constructor.modelName === 'orders')
+        oMailParams.doctype = 'Order';
+    else if (oDoc.constructor.modelName === 'invoices')
+        oMailParams.doctype = 'Invoice';
 
-		if (oDoc.stat !== 'Approval')
-			reject({
-				"error" : "document is not in approval step"
-			});
+    emailer.sendDocInfoMsg(req, oMailParams);
 
-		var bSuccess = false;
-		var sOper = req.body.operation;
-
-		var oResStep = oDoc.approval.find(function(oApprovalStep) {
-			if (!oApprovalStep.resdate && oApprovalStep.steptype == 'A') {
-
-				return oApprovalStep;
-
-			}
-		});
-
-		if (!oResStep) {
-			reject({
-				"error" : "document is not in approval step"
-			});
-		}
-
-		mUser.validatePartner(req, oResStep.partnerid).then(
-				function(bAllowed) {
-
-					if (!bAllowed)
-						reject({
-							"error" : "You are not allowed to approve document"
-						});
-
-					oResStep.resdate = Date.now();
-					oResStep.resolver = sUserid;
-					bSuccess = true;
-					if (req.body.invoice.note)
-						oResStep.note = req.body.invoice.note;
-
-					// if Approve-> following actions
-
-					if (sOper == 'A') {
-						var bCompleted = true;
-
-						for (var a = 0; a < oDoc.approval.length; a++) {
-
-							if (!oDoc.approval[a].resdate
-									&& oDoc.approval[a].steptype == 'A') {
-								bCompleted = false;
-								break;
-							}
-							if (!oDoc.approval[a].resdate
-									&& oDoc.approval[a].steptype == 'N') {
-								// Notification\email should be send here
-								oDoc.approval[a].resdate = Date.now();
-								oDoc.approval[a].resolver = sUserid;
-							}
-						}
-					}
-
-					// Update document status
-
-					if (bSuccess && bCompleted)
-						oDoc.stat = "Approved";
-					else if (bSuccess && sOper == 'R')
-						oDoc.stat = "Rejected";
-
-					if (bSuccess)
-						resolve(oDoc);
-					else
-						reject({
-							"message" : "Operation cancelled"
-						});
-
-				});
-	});
 
 };
 

@@ -20,6 +20,7 @@
 										<headerContent>
 											<SearchField id="searchUserField" search="onSearchUser"
 												width="auto" />
+                        <Button press="onRefreshUsers" icon="sap-icon://refresh" />
 										</headerContent>
 
 										<List id="overviewUsers" mode="SingleSelectMaster" itemPress="onUserDetails"
@@ -135,6 +136,7 @@
 										<headerContent>
 											<SearchField id="searchPartnerField" search="onSearchPartner"
 												width="auto" />
+                        <Button press="onRefreshPartners" icon="sap-icon://refresh" />
 										</headerContent>
 
 										<List id="overviewPartners" mode="SingleSelectMaster" itemPress="onPartnerDetails"

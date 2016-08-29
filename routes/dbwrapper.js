@@ -1,8 +1,10 @@
 
 var mongoose    = require('mongoose');
+var settings    = require('../settings');
 
 
-mongoose.connect('mongodb://sysdba:masterkey@ds025742.mlab.com:25742/comport_dev');
+//mongoose.connect('mongodb://sysdba:masterkey@ds025742.mlab.com:25742/comport_dev');
+mongoose.connect(settings.dbconstr);
 var db = mongoose.connection;
 
 db.on('error', function (err) {
@@ -42,7 +44,7 @@ var partners = new Schema({
     partnername: {type: String, required: true},
 	email: {type: String, required: true},
 	address: {type: String},
-    comment: {type: String}        
+    comment: {type: String}
 });
 
 var orders = new Schema({
@@ -60,7 +62,7 @@ var orders = new Schema({
     approval: [{stepno: {type: Number}, steptype: {type: String}, partnerid: {type: String}, resolver: {type: String}, resdate: {type: Date}, note: {type: String}, approve: {type: Boolean}}]
 });
 
-    
+
 var invoices = new Schema({
     partnerid: String,
     num:  {type: String, required: true, maxlength: 20},
@@ -110,9 +112,9 @@ getNextId = function(sType) {
 		function(err, oNext) {
 					if (err) return  reject(err);
 					return resolve(oNext.seq);
-				}		
+				}
 		)
-		
+
 	});
 };
 

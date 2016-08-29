@@ -1,10 +1,11 @@
 var querystring = require('querystring');
 var http = require('http');
+var extsys    = require('../settings').extsys;
 
-var host = '1d.ddns.net';
-var port = '8005';
-var username = 'developer1';
-var password = 'Summer2016!';
+var host = extsys.host;
+var port = extsys.port;
+var username = extsys.username;
+var password = extsys.password;
 
 var sAuth = 'Basic ';
 sAuth += new Buffer(username + ':' + password).toString('base64');
@@ -141,7 +142,7 @@ function performPostRequestSAP(endpoint, data, success, error) {
 		headers['Content-Type']  =  'application/json';
 		headers['X-CSRF-Token'] = oGetRes.headers['x-csrf-token'];
 		headers['cookie'] = oGetRes.headers['set-cookie']; //array should be converted to string with ; delimers?
-		
+
 		//headers['content-length'] = Buffer.byteLength(data);
 
 		var options = {
@@ -153,13 +154,13 @@ function performPostRequestSAP(endpoint, data, success, error) {
 		};
 
 		var req = http.request(options, function(res) {
-			
-			
+
+
 			if (res.statusCode !== 200) return error({"error" : "unexpected response from server"});
-				
-			
+
+
 			res.setEncoding('utf-8');
-            			
+
 			var responseString = '';
 
 			res.on('data', function(data) {
@@ -168,7 +169,7 @@ function performPostRequestSAP(endpoint, data, success, error) {
 
 			res.on('end', function() {
 				try {
-				     
+
 					var responseObject = { response: JSON.parse(responseString)};
 					success(responseObject);
 				} catch (e) {

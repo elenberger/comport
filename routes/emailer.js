@@ -7,83 +7,87 @@
 
 var nodemailer = require('nodemailer');
 var partners = require('./partners');
+var settings = require('../settings').emailer;
 
-sendOrderApproveMsg = function(req, oParams) {
+sendDocApproveMsg = function(req, oParams) {
 
-	var pOwner = partners.getPartnerById(oParams.partnerid);
-	pOwner.then(function(oPartner) {
-		var pSendTo = partners.getPartnerById(oParams.sendto);
-		pSendTo.then(function(oSendTo) {
+    var pOwner = partners.getPartnerById(oParams.partnerid);
+    pOwner.then(function(oPartner) {
+        var pSendTo = partners.getPartnerById(oParams.sendto);
+        pSendTo.then(function(oSendTo) {
 
-			var oMailOpt = {};
+            var oMailOpt = {};
 
-			// get partner email
+            // get partner email
 
-			oMailOpt.to = oSendTo.email;
-			oMailOpt.subject = 'Please approve order ' + oParams.num;
-			oMailOpt.template = 'mail';
-			oMailOpt.bodyparams = {};
-			oMailOpt.bodyparams.textp1 = 'New order ' + oParams.num + ' from '
-					+ oPartner.partnername
-					+ ' has been received. Please approve';
+            oMailOpt.to = oSendTo.email;
+            oMailOpt.subject = 'Please approve ' + oParams.doctype.toLowerCase() + ' #' + oParams.num;
+            oMailOpt.template = 'mail';
+            oMailOpt.bodyparams = {};
+            oMailOpt.bodyparams.textp1 = 'New ' + oParams.doctype.toLowerCase() + oParams.num + ' from ' +
+                oPartner.partnername +
+                ' has been received. Please approve.';
 
-			sendEmail(req, oMailOpt);
+            sendEmail(req, oMailOpt);
 
-		});
-	});
+        });
+    });
 
 };
 
-sendOrderInfoMsg = function(req, oParams) {
-	var pSendTo = partners.getPartnerById(oParams.sendto);
-	pSendTo.then(function(oSendTo) {
+sendDocInfoMsg = function(req, oParams) {
 
-		var oMailOpt = {};
+    var pSendTo = partners.getPartnerById(oParams.sendto);
+    pSendTo.then(function(oSendTo) {
 
-		// get partner email
-		oMailOpt.to = oSendTo.email;
-		oMailOpt.subject = ' Order  ' + oParams.num + ' has been changed';
-		oMailOpt.template = 'mail';
-		oMailOpt.bodyparams = {};
-		oMailOpt.bodyparams.textp1 = 'Order  ' + oParams.num
-				+ ' has been changed.  New status is ' + oParams.stat + '.';
+        var oMailOpt = {};
 
-		sendEmail(req, oMailOpt);
+        // get partner email
+        oMailOpt.to = oSendTo.email;
+        oMailOpt.subject = oParams.doctype + ' #' + oParams.num + ' has been changed';
+        oMailOpt.template = 'mail';
+        oMailOpt.bodyparams = {};
+        oMailOpt.bodyparams.textp1 = oParams.doctype + ' #' + oParams.num +
+            ' has been changed.  New status is ' + oParams.stat + '.';
 
-	});
+        sendEmail(req, oMailOpt);
+
+
+    });
 };
 
 sendEmail = function(req, oMailOpt) {
-	// oMailOpt = {to, subject, template, bodyparams:{texth1, texth2, texth3,
-	// textp1}}
+    // oMailOpt = {to, subject, template, bodyparams:{texth1, texth2, texth3,
+    // textp1}}
 
-	var smtpTransport = nodemailer.createTransport("Mail.Ru", {
-		auth : {
-			user : 'noreply.1@mail.ru', // Your email id
-			pass : 'GeXcoR9!' // Your password
-		}
-	});
+    var smtpTransport = nodemailer.createTransport(settings.service, {
+        auth: {
+            user: settings.from, // Your email id
+            pass: settings.pass // Your password
+        }
+    });
 
-	var app = req.app;
-	app.render(oMailOpt.template, oMailOpt.bodyparams, function(err, html) {
+    var app = req.app;
+    app.render(oMailOpt.template, oMailOpt.bodyparams, function(err, html) {
 
-		var mailOptions = {
-			from : 'noreply.1@mail.ru', // sender address
-			to : oMailOpt.to, // list of receivers
-			subject : oMailOpt.subject, // Subject line
-			// text: text
-			html : html
-		};
+        var mailOptions = {
+            from: settings.from, // sender address
+            to: oMailOpt.to, // list of receivers
+            subject: oMailOpt.subject, // Subject line
+            // text: text
+            html: html
+        };
 
-		smtpTransport.sendMail(mailOptions, function(error, info) {
-			if (error) {
-				// TODO write message to LOG
-			}
-			;
-		});
+        smtpTransport.sendMail(mailOptions, function(error, info) {
+            if (error) {
+                try {
+                    console.log(error);
+                } catch (err) {}
+            };
+        });
 
-	});
+    });
 
 };
-module.exports.sendOrderApproveMsg = sendOrderApproveMsg;
-module.exports.sendOrderInfoMsg = sendOrderInfoMsg;
+module.exports.sendDocApproveMsg = sendDocApproveMsg;
+module.exports.sendDocInfoMsg = sendDocInfoMsg;
