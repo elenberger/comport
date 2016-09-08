@@ -13,7 +13,7 @@ var mPartner = require('./partners');
 var getUser = require('./users').getUser;
 var mApprove = require('./approve');
 
-maintainInvoice = function(req, res) {
+maintainInvoice = function (req, res) {
 	// get operation, num, partnerid, order from request.
 
 	var sOper = req.body.operation;
@@ -26,72 +26,75 @@ maintainInvoice = function(req, res) {
 
 	if (!sOper || !sInvoicenum || !sPartnerid || !sOrder) {
 		return res.status(200).send({
-			"error" : "Wrong message format"
+			"error": "Wrong message format"
 		});
 	}
 
 	// find invoice and check status.
 	invoicesModel.findOne({
-		partnerid : sPartnerid,
-		num : sInvoicenum
-	}).exec(function(err, invoice) {
+		partnerid: sPartnerid,
+		num: sInvoicenum
+	}).exec(function (err, invoice) {
 
 		if (err)
 			return res.status(200).send({
-				"error" : "Error while creating invoice"
+				"error": "Error while creating invoice"
 			});
 
 		switch (sOper) {
 
-		case "C":
-			if (invoice) {
+			case "C":
+				if (invoice) {
+					return res.status(200).send({
+						"error": "Invoice exists!"
+					});
+				}
+
+				addInvoice(req.body.invoice, req, res);
+
+				break;
+			case "U":
+				// remove old invoice and create new only if it is still in Approval
+				// or Archived
+				if (invoice) {
+					invoice.remove(function (err, removed) {
+					});
+				}
+				addInvoice(req.body.invoice, req, res);
+
+				break;
+			case "D":
+				if (invoice) {
+					invoice.remove(function (err, removed) {
+						res.end();
+					});
+				} else {
+					res.send({
+						"error": "Invoice doesn't exists"
+					});
+				}
+				break;
+			case "A": //Approve
+			case "R":
+				mApprove.approveInvoice(req, res, invoice);
+				break;
+			case "P": //update posting information
+				updatePostingInfo(req, res, invoice);
+				break;
+			case "X": //send to external system
+				sendInvoiceExt(req, res);
+				break;
+			default:
 				return res.status(200).send({
-					"error" : "Invoice exists!"
+					"error": "Wrong message format"
 				});
-			}
-
-			addInvoice(req.body.invoice, req, res);
-
-			break;
-		case "U":
-			// remove old invoice and create new only if it is still in Approval
-			// or Archived
-			if (invoice) {
-				invoice.remove(function(err, removed) {
-				});
-			}
-			addInvoice(req.body.invoice, req, res);
-
-			break;
-		case "D":
-			if (invoice) {
-				invoice.remove(function(err, removed) {
-					res.end();
-				});
-			} else {
-				res.send({
-					"error" : "Invoice doesn't exists"
-				});
-			}
-			break;
-		case "A":
-		case "R":
-			mApprove.approveInvoice(req, res, invoice);
-			break;
-		case "X":
-			sendInvoiceExt(req, res);
-			break;
-		default:
-			return res.status(200).send({
-				"error" : "Wrong message format"
-			});
 
 		}
 	});
 };
 
 
-findPartyPartnerId = function(aParties, sRole) {
+findPartyPartnerId = function (aParties, sRole) {
 	for (i = 0; i < aParties.length; i++) {
 		if (sRole == aParties[i].role) {
 			return aParties[i].partnerid;
@@ -100,15 +103,15 @@ findPartyPartnerId = function(aParties, sRole) {
 	return "";
 };
 
-addInvoice = function(oInvoice, req, res) {
+addInvoice = function (oInvoice, req, res) {
 
 	// logic before save
 
-	invoicesModel.schema.pre('save', function(next) {
+	invoicesModel.schema.pre('save', function (next) {
 		if (this.num.length > 10) {
 			var error = new ValidationError(this);
 			error.errors.num = new ValidatorError('num',
-					'length for number is invalid', 'notvalid', this.num);
+				'length for number is invalid', 'notvalid', this.num);
 			return next(error);
 		}
         if (!this.stat) this.stat = 'Approval';
@@ -117,65 +120,66 @@ addInvoice = function(oInvoice, req, res) {
 
         //in case appoval already here - skip next code
         if (oInvoice.approval.length > 0) return next();
-        
-        
+
+
 		// init approval procedure
 
 		workflowsModel.findOne({
-			wfid : "dummyinv"
+			wfid: "dummyinv"
 		}).lean().exec(
-				function(err, workflow) {
-					if (err)
-						res.status(500).send({
-							"error" : "Workflow procedure is not determined"
-						});
+			function (err, workflow) {
+				if (err)
+					res.status(500).send({
+						"error": "Workflow procedure is not determined"
+					});
 
-					var aSteps = workflow.steps;
+				var aSteps = workflow.steps;
 
-					oInvoice.approval.length = 0;
+				oInvoice.approval.length = 0;
 
-					for (var i = 0; i < aSteps.length; i++) {
-						var oInvoiceWorkflowStep = {};
+				for (var i = 0; i < aSteps.length; i++) {
+					var oInvoiceWorkflowStep = {};
 
-						oInvoiceWorkflowStep.stepno = i + 1;
-						oInvoiceWorkflowStep.steptype = aSteps[i].steptype;
-						oInvoiceWorkflowStep.partnerid = findPartyPartnerId(
-								oInvoice.parties, aSteps[i].role);
+					oInvoiceWorkflowStep.stepno = i + 1;
+					oInvoiceWorkflowStep.steptype = aSteps[i].steptype;
+					oInvoiceWorkflowStep.partnerid = findPartyPartnerId(
+						oInvoice.parties, aSteps[i].role);
 
-						if (i == 0) {
-							oInvoiceWorkflowStep.approve = true;
+					if (i == 0) {
+						oInvoiceWorkflowStep.approve = true;
 
-                // data for email
-                var oMailParams = {
-                  num : oInvoice.num,
-                  partnerid : oInvoice.partnerid,
-                  sendto : oInvoiceWorkflowStep.partnerid,
-                  doctype : 'Invoice'
-                }
-								//send email async
-								setTimeout(function(){
-								emailer.sendDocApproveMsg(req, oMailParams)}, 10000);
-
+						// data for email
+						var oMailParams = {
+							num: oInvoice.num,
+							partnerid: oInvoice.partnerid,
+							sendto: oInvoiceWorkflowStep.partnerid,
+							doctype: 'Invoice'
 						}
+						//send email async
+						setTimeout(function () {
+							emailer.sendDocApproveMsg(req, oMailParams)
+						}, 10000);
 
-						oInvoice.approval.push(oInvoiceWorkflowStep);
 					}
 
-					// Last step is notification to Invoice owner
-					var oInvoiceWorkflowStep = {
-						stepno : i + 1,
-						steptype : "N",
-						partnerid : oInvoice.partnerid
-					};
 					oInvoice.approval.push(oInvoiceWorkflowStep);
+				}
 
-					next();
-				});
+				// Last step is notification to Invoice owner
+				var oInvoiceWorkflowStep = {
+					stepno: i + 1,
+					steptype: "N",
+					partnerid: oInvoice.partnerid
+				};
+				oInvoice.approval.push(oInvoiceWorkflowStep);
+
+				next();
+			});
 
 	});
 
 	// Determine Bill-to party
-	var oBilltoParty = oInvoice.parties.find(function(oParty) {
+	var oBilltoParty = oInvoice.parties.find(function (oParty) {
 		if (oParty.role === 'Billto') {
 
 			return oParty;
@@ -184,8 +188,8 @@ addInvoice = function(oInvoice, req, res) {
 	});
 
 	if (!oBilltoParty)
-		return res.status(500).send({
-			"error" : "Bill-to party is not determined"
+		return res.status(200).send({
+			"error": "Bill-to party is not determined"
 		});
 
 	// validate\get PO reference and create invoice
@@ -194,22 +198,22 @@ addInvoice = function(oInvoice, req, res) {
 	sOrdernum = oInvoice.order;
 
 	ordersModel.findOne({
-		partnerid : sBillto,
-		num : sOrdernum
-	}).exec(function(err, order) {
+		partnerid: sBillto,
+		num: sOrdernum
+	}).exec(function (err, order) {
 
 		if (err || !order)
-			return res.status(500).send({
-				"error" : "Reference order not found"
+			return res.status(200).send({
+				"error": "Reference order not found"
 			});
 
 		oInvoice.order = order;
 
-		invoicesModel.create(oInvoice, function(err, invoice) {
+		invoicesModel.create(oInvoice, function (err, invoice) {
 
 			if (err)
-				res.status(500).send({
-					"error" : "Invoice is not created"
+				res.status(200).send({
+					"error": "Invoice is not created"
 				});
 
 			return res.send(invoice);
@@ -219,11 +223,11 @@ addInvoice = function(oInvoice, req, res) {
 
 };
 
-getOwnInvoices = function(req, res) {
+getOwnInvoices = function (req, res) {
 	res.setHeader("Content-Type", "application/json");
 
 	// get partnerid's which can see user.
-	getUser(req).then(function(oUser) {
+	getUser(req).then(function (oUser) {
 		var aPartners = [];
 		if (oUser.partners) {
 			for (i = 0; i < oUser.partners.length; i++) {
@@ -235,17 +239,17 @@ getOwnInvoices = function(req, res) {
 			return res.end();
 
 		invoicesModel.find({
-			partnerid : {
-				$in : aPartners
+			partnerid: {
+				$in: aPartners
 			}
-		}).populate('order').lean().exec(function(err, invoices) {
+		}).populate('order').lean().exec(function (err, invoices) {
 
 			if (err)
-				return res.status(500).send(err);
+				return res.status(200).send(err);
 
 			// add some fields in order
 
-			var pInvoices = new Promise(function(resolve, reject) {
+			var pInvoices = new Promise(function (resolve, reject) {
 				var aProm = [];
 				for (var s = 0; s < invoices.length; s++) {
 					var oDoc = invoices[s];
@@ -254,14 +258,14 @@ getOwnInvoices = function(req, res) {
 
 				}
 
-				Promise.all(aProm).then(function(aDocs) {
+				Promise.all(aProm).then(function (aDocs) {
 					resolve(invoices);
 				});
 
 			});
 
 			// send data
-			pInvoices.then(function(invoices) {
+			pInvoices.then(function (invoices) {
 
 				// final corrections
 				for (d = 0; d < invoices.length; d++) {
@@ -270,7 +274,7 @@ getOwnInvoices = function(req, res) {
 
 				// return results
 				res.write(JSON.stringify({
-					docs : invoices
+					docs: invoices
 				}));
 				return res.end();
 			});
@@ -279,12 +283,12 @@ getOwnInvoices = function(req, res) {
 	});
 };
 
-getIncInvoices = function(req, res) {
+getIncInvoices = function (req, res) {
 
 	res.setHeader("Content-Type", "application/json");
 
 	// get partnerid's which can see user.
-	getUser(req).then(function(oUser) {
+	getUser(req).then(function (oUser) {
 		var aPartners = [];
 		if (oUser.partners) {
 			for (i = 0; i < oUser.partners.length; i++) {
@@ -296,14 +300,14 @@ getIncInvoices = function(req, res) {
 			return res.status(200).send({});
 
 		invoicesModel.find({
-			'parties.partnerid' : {
-				$in : aPartners
+			'parties.partnerid': {
+				$in: aPartners
 			}
-		}).populate('order').lean().exec(function(err, invoices) {
+		}).populate('order').lean().exec(function (err, invoices) {
 
 			if (err)
 				return res.status(500).send({
-					"error" : "Error while reading invoices"
+					"error": "Error while reading invoices"
 				});
 
 			// add some fields into invoice
@@ -318,20 +322,20 @@ getIncInvoices = function(req, res) {
 
 			// final corrections, calculate if document approvable
 
-			Promise.all(aProm).then(function(invoices) {
+			Promise.all(aProm).then(function (invoices) {
 
 				for (var d = 0; d < invoices.length; d++) {
 					var oInvoice = invoices[d];
 					oInvoice.approvable = false;
 
-					var oRes = oInvoice.approval.find(function(oApprovalStep) {
+					var oRes = oInvoice.approval.find(function (oApprovalStep) {
 						if (oApprovalStep.approve) {
 							return oApprovalStep
 						}
 					});
 
 					if (oRes) {
-						var sPartnerid = aPartners.find(function(sPartnerid) {
+						var sPartnerid = aPartners.find(function (sPartnerid) {
 							if (sPartnerid == oRes.partnerid) {
 								return sPartnerid;
 							}
@@ -345,7 +349,7 @@ getIncInvoices = function(req, res) {
 
 				// return results
 				res.write(JSON.stringify({
-					docs : invoices
+					docs: invoices
 				}));
 				return res.end();
 			});
@@ -355,45 +359,45 @@ getIncInvoices = function(req, res) {
 
 };
 
-getInvoiceDetails = function() {
+getInvoiceDetails = function () {
 };
 
 // ----private functions
-_getInvoice = function(oInvoice) {
-	return new Promise(function(resolve, reject) {
+_getInvoice = function (oInvoice) {
+	return new Promise(function (resolve, reject) {
 
 		var aPromises = [];
 
-    //Modify status text
-    if (oInvoice.stat === 'Approval') oInvoice.stat = 'Pending approval';
+		//Modify status text
+		if (oInvoice.stat === 'Approval') oInvoice.stat = 'Pending approval';
 
 		// partnername
 		aPromises.push(mPartner.getPartnerById(oInvoice.partnerid).then(
-				function(oPartner) {
-					oInvoice.partnername = oPartner.partnername;
-				}));
+			function (oPartner) {
+				oInvoice.partnername = oPartner.partnername;
+			}));
 
 		// parties
 		aPromises.push(mPartner.getDocParties(oInvoice.parties).then(
-				function(aParties) {
-					oInvoice.parties = aParties;
-				}));
+			function (aParties) {
+				oInvoice.parties = aParties;
+			}));
 
 		// Approvals
 		aPromises.push(mApprove.getDocApprovals(oInvoice.approval).then(
-				function(aApprovals) {
-					oInvoice.approval = aApprovals;
-				}));
+			function (aApprovals) {
+				oInvoice.approval = aApprovals;
+			}));
 
 		// Resolve
-		Promise.all(aPromises).then(function(oObjects) {
+		Promise.all(aPromises).then(function (oObjects) {
 			resolve(oInvoice);
 		});
 
 	});
 };
 
-getInvoiceDetails = function(req, res) {
+getInvoiceDetails = function (req, res) {
 
 	// Object to retrieve and push Invoice details
 	res.setHeader("Content-Type", "application/json");
@@ -401,66 +405,66 @@ getInvoiceDetails = function(req, res) {
 	var sId = req.params.id;
 
 	rest.performGetRequest("/sap/bc/rest/z_comport/inv/" + sId, "",
-	// success
-	function(bkndres) {
+		// success
+		function (bkndres) {
 
-		res.write(JSON.stringify({
-			invoiceDetails : bkndres
-		}));
+			res.write(JSON.stringify({
+				invoiceDetails: bkndres
+			}));
 
-		return res.end();
+			return res.end();
 
-	},
-	// on error
-	function(error) {
-		return res.status(500).send({
-			"error" : "Error while requesting data from backend"
+		},
+		// on error
+		function (error) {
+			return res.status(200).send({
+				"error": "Error while requesting data from backend"
+			});
+
 		});
-
-	});
 
 };
 
 // Return invoice from external system
-getInvoiceDetails = function(req, res) {
+getInvoiceDetails = function (req, res) {
 
 	// Object to retrieve and push Invoice details
 	res.setHeader("Content-Type", "application/json");
 
 	var sId = req.params.num;
-	getInvoiceExtSys(sId).then(function(oInvoice) {
+	getInvoiceExtSys(sId).then(function (oInvoice) {
 
 		return res.status(200).send(JSON.stringify({
-			invoiceDetails : oInvoice
+			invoiceDetails: oInvoice
 		}));
-	}, function(err) {
+	}, function (err) {
 		return res.status(500).send({
-			"error" : "Error while requesting data from backend"
+			"error": "Error while requesting data from backend"
 		});
 	});
 
 };
 
 // Get InvoiceDetailsExt with all details from external system
-getInvoiceExtSys = function(sId) {
+getInvoiceExtSys = function (sId) {
 
-	return new Promise(function(resolve, reject) {
+	return new Promise(function (resolve, reject) {
 
 		rest.performGetRequest("/sap/bc/rest/z_comport/invoices/" + sId, "",
-		// success
-		function(bkndres) {
-			resolve(bkndres);
-		},
-		// on error
-		function(error) {
-			reject(error);
-		});
+			// success
+			function (bkndres) {
+				resolve(bkndres);
+			},
+			// on error
+			function (error) {
+				reject(error);
+			});
 	});
 
 };
 
 // Send Invoice to external system
-sendInvoiceExt = function(req, res) {
+sendInvoiceExt = function (req, res) {
 
 	"use strict";
 
@@ -468,103 +472,160 @@ sendInvoiceExt = function(req, res) {
 	// in comport)
 
 	var oParams = {
-		num : req.body.invoice.num,
-		partnerid : req.body.invoice.partnerid
+		num: req.body.invoice.num,
+		partnerid: req.body.invoice.partnerid
 	};
 
 	getInvoiceExtSys(oParams.num).then(
-	// Success
-	function(oInvoice) {
+		// Success
+		function (oInvoice) {
 
-		// map properties
+			// map properties
 
-		var oObject = {};
+			var oObject = {};
 
-		oObject.partnerid = oInvoice.partnerid;
-		oObject.invdate   = oInvoice.date;
-// oObject.invnum = oInvoice.num;
-		oObject.currency    = oInvoice.currency;
-		oObject.invnote   = oInvoice.num + " " + oInvoice.node;
-		oObject.refnum    = oInvoice.order;
+			oObject.partnerid = oInvoice.partnerid;
+			oObject.invdate = oInvoice.date;
+			oObject.num = oInvoice.num;
+			oObject.currency = oInvoice.currency;
+			oObject.invnote = oInvoice.note;
+			oObject.refnum = oInvoice.order;
 
-		oObject.positions = [];
+			oObject.positions = [];
 
-		for (var j = 0; j < oInvoice.positions.length; j++) {
-			oObject.positions.push({
-				text : oInvoice.positions[j].postxt,
-				sum : oInvoice.positions[j].netamount
-			});
-		}
+			for (var j = 0; j < oInvoice.positions.length; j++) {
+				oObject.positions.push({
+					text: oInvoice.positions[j].postxt,
+					sum: oInvoice.positions[j].netamount
+				});
+			}
 
-		// send to RECEIVER
+			// send to RECEIVER
 
-		rest.performPostRequestSAP("/sap/bc/rest/z_comport/incinvoices", oObject,
-		// success
-		function(oResponse) {
+			rest.performPostRequestSAP("/sap/bc/rest/z_comport/incinvoices", oObject,
+				// success
+				function (oResponse) {
 
-			var oUpdate = {
-					stat: "Sent",
-					lastMsg: "",
-					partnerid: oInvoice.partnerid,
-					num: oInvoice.num
+					var oUpdate = {
+						posting: "Sent",
+						lastMsg: "",
+						partnerid: oInvoice.partnerid,
+						num: oInvoice.num
 					};
 
-			for (let oMsg of oResponse.response) {
-				if (oMsg.type = 'E'){
-					oUpdate.stat = 'Error';
-				     oUpdate.lastMsg = oMsg.message;
-				     break;
-				}
-			}
+					for (let oMsg of oResponse.response) {
+						if (oMsg.type = 'E') {
+							oUpdate.posting = 'Error';
+							oUpdate.lastMsg = oMsg.message;
+							break;
+						}
+					}
 
-			// Update Invoice Status async
-			updateInvoiceStatus(oUpdate);
+					// Update Invoice Status async
+					updateInvoiceStatus(oUpdate);
 
-			return res.status(200).send(JSON.stringify(oUpdate));
+					return res.status(200).send(JSON.stringify(oUpdate));
 
+
+				},
+				// on error Receiver
+				function (error) {
+
+					// Update Invoice Status
+					var oUpdate = {
+						posting: "Error",
+						lastMsg: "Server error",
+						partnerid: oInvoice.partnerid,
+						num: oInvoice.num
+					}
+					updateInvoiceStatus(oUpdate);
+
+					return res.status(200).send(error);
+
+				});
 
 		},
-		// on error Receiver
-		function(error) {
-
-			// Update Invoice Status
-			var oUpdate = {stat: "Error",
-					       lastMsg: "Server error",
-					       partnerid: oInvoice.partnerid,
-					       num:       oInvoice.num
-			}
-			updateInvoiceStatus(oUpdate);
-
-			return res.status(500).send(error);
-
+		// Reject ->invoice is not received from Sender
+		function (err) {
+			return res.status(200).send({
+				"error": "Error while requesting data from backend"
+			});
 		});
-
-	},
-	// Reject ->invoice is not received from Sender
-	function(err) {
-		return res.status(500).send({
-			"error" : "Error while requesting data from backend"
-		});
-	});
 
 };
 
-updateInvoiceStatus = function(oUpdate) {
+updateInvoiceStatus = function (oUpdate) {
 	var oInvObjectNew = {
-		  stat: oUpdate.stat,
-		  lasterr: oUpdate.lastMsg
+		posting: oUpdate.posting,
+		lasterr: oUpdate.lastMsg
 
 	};
 
 	invoicesModel.findOneAndUpdate(
-			{partnerid: oUpdate.partnerid,
-				   num: oUpdate.num},
-			oInvObjectNew,
-			{new: true},
-	function(err, oUpdInvoice) {
-		// TODO: check if invoice was updated
-			}
+		{
+			partnerid: oUpdate.partnerid,
+			num: oUpdate.num
+		},
+		oInvObjectNew,
+		{ new: true },
+		function (err, oUpdInvoice) {
+			// TODO: check if invoice was updated
+		}
 	);
+};
+
+updatePostingInfo = function (req, res, oInvoice) {
+
+	   var oMessage = req.body.invoice;
+
+	   if (oMessage.posting !== 'Posted' && oMessage.posting !== 'Error')
+	       return res.status(200).send({
+			"error": "Wrong message format"
+		});
+
+	   oInvoice.posting = oMessage.posting;
+
+	   if (oMessage.posting === 'Posted' && oMessage.extdocument) {
+		oInvoice.extdocument = oMessage.extdocument;
+		oInvoice.lasterr = "";
+	   }
+
+	   if (oMessage.posting === 'Error' && oMessage.lasterr) {
+		oInvoice.extdocument = "";
+		oInvoice.lasterr = oMessage.lasterr;
+	   }
+
+	oInvoice.save(function (err) {
+		if (err)
+			return res.status(200).send({
+				"error": "Operation cancelled"
+			});
+
+		// send message 
+
+		res.status(200).send({
+			"message": "Posting information successfully updated"
+		});
+
+        var oParty = oInvoice.parties.find(function (oParty) {
+			if (oParty.role === 'Billto') return oParty;
+		});
+
+		if (!oParty) return;
+
+		var oMailParams = {
+			num: oInvoice.num,
+			partnerid: oInvoice.partnerid,
+			sendto: oParty.partnerid,
+			posting: oInvoice.posting,
+			doctype: 'Invoice'
+		}
+
+		setTimeout(function () {
+			emailer.sendInvoicePostingMsg(req, oMailParams);
+		}, 10000);
+
+	});
 };
 
 module.exports.maintainInvoice = maintainInvoice;

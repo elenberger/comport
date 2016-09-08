@@ -1,4 +1,10 @@
+var oExtFormatter;
 jQuery.sap.require("sap.ui.model.Filter");
+
+sap.ui.define(["comport/model/formatter"], function (oObject) {
+    "use strict";
+    oExtFormatter = oObject;
+});
 
 sap.ui.controller("views.Invoices", {
 
@@ -10,11 +16,14 @@ sap.ui.controller("views.Invoices", {
      *
      * @memberOf demopartner.Orders
      */
-    onInit: function() {
+    oFormatter: oExtFormatter,
+
+
+    onInit: function () {
 
     },
 
-    onInvoicePress: function(evt, oData) {
+    onInvoicePress: function (evt, oData) {
 
         var oContext = evt.getSource().getBindingContext();
 
@@ -22,12 +31,12 @@ sap.ui.controller("views.Invoices", {
 
     },
 
-    onDataRefresh: function(evt) {
+    onDataRefresh: function (evt) {
 
         var oController = this;
         var oModel = oController.getView().getModel();
         var sPath = oController.getView().byId("idMasterPage").getBindingContext().getPath();
-        oModel.requestData(sPath, function(iCode, oData) {
+        oModel.requestData(sPath, function (iCode, oData) {
             if (iCode === 200) {
                 oModel.refresh();
             } else
@@ -35,11 +44,11 @@ sap.ui.controller("views.Invoices", {
         });
     },
 
-    onNavBack: function(evt) {
+    onNavBack: function (evt) {
         this.AppController.navBack();
     },
 
-    onSearch: function(evt) {
+    onSearch: function (evt) {
 
         // add filters for search
         var list = this.getView().byId("overviewTable");

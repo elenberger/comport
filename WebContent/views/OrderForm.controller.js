@@ -124,7 +124,7 @@ sap.ui.controller("views.OrderForm", {
 	},
 
 	rejectOrder : function(evt) {
-		this.sendApprove(this.getView().getBindingContext(), 'A');
+		this.sendApprove(this.getView().getBindingContext(), 'R');
 	}
 
 /**

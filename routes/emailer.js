@@ -56,6 +56,26 @@ sendDocInfoMsg = function(req, oParams) {
     });
 };
 
+sendInvoicePostingMsg = function(req, oParams) {
+
+    var pSendTo = partners.getPartnerById(oParams.sendto);
+    pSendTo.then(function(oSendTo) {
+
+        var oMailOpt = {};
+
+        // get partner email
+        oMailOpt.to = oSendTo.email;
+        oMailOpt.subject = oParams.doctype + ' #' + oParams.num + ' - posting status has been changed';
+        oMailOpt.template = 'mail';
+        oMailOpt.bodyparams = {};
+        oMailOpt.bodyparams.textp1 = oParams.doctype + ' #' + oParams.num +
+            ' - posting status has been changed.  New status is ' + oParams.posting + '.';
+
+        sendEmail(req, oMailOpt);
+
+    });
+};
+
 sendEmail = function(req, oMailOpt) {
     // oMailOpt = {to, subject, template, bodyparams:{texth1, texth2, texth3,
     // textp1}}
@@ -91,3 +111,4 @@ sendEmail = function(req, oMailOpt) {
 };
 module.exports.sendDocApproveMsg = sendDocApproveMsg;
 module.exports.sendDocInfoMsg = sendDocInfoMsg;
+module.exports.sendInvoicePostingMsg = sendInvoicePostingMsg;

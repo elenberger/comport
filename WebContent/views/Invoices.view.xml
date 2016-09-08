@@ -25,6 +25,9 @@
 				<Column id="colNoteStat" >
 				<Label text = "Info"/>
 				</Column>
+			    <Column id="colPosting" >
+				<Label text = "Posting"/>
+				</Column>
 			</columns>
 
 			<items>
@@ -34,6 +37,7 @@
 						<ObjectIdentifier title="{partnerid}" text="{partnername}" />
 						<ObjectIdentifier title="{netamount} {currency}" text="{vatamount}" />
 						<ObjectIdentifier title="{stat}" text="{note}" />
+						<ObjectIdentifier title="{path: 'posting', formatter: '.oFormatter.displayPosted'}" text="{extdocument}{lasterr} "  />
 					</cells>
 				</ColumnListItem>
 

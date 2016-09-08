@@ -41,10 +41,14 @@
 										<Label text="Status:" class="sapUiSmallMarginEnd" width="100px" />
 										<Text text="{stat}" />
 									</HBox>
-									<VBox>
-										<Button id="sendExt" press="sendExtSys" text="send to Ext System"
-											visible="{path: 'stat', formatter: '.oFormatter.displaysendExt'}" />
-									</VBox>
+									<HBox>
+										<Label text="Posting:" class="sapUiSmallMarginEnd" width="100px" />
+										<Text text="{path: 'posting', formatter: '.oFormatter.displayPosted'}" class="sapUiSmallMarginEnd" />
+									</HBox>
+									<HBox>
+										<Button id="sendExt" press="sendExtSys" text="Send"
+											visible="{parts: [{path: 'stat'}, {path: 'posting'}], formatter: '.oFormatter.displaysendExt'}" />
+									</HBox>
 
 								</VBox>
 								<VBox justifyContent="Start" class="sapUiSmallMargin">
