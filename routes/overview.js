@@ -26,7 +26,7 @@ overview = function(req, res) {
 
 				if (aPartners.length == 0)
 					
-					return res.end({});
+					return res.end("{}");
 
 				// Roles
 				if (oUser.roles) {

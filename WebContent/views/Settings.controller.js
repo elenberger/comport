@@ -204,7 +204,7 @@ sap.ui.controller("views.Settings", {
     // ///////////////////////////////////////
 
     changeUserPageState: function(sState) {
-        var aElems = ["inpu_userid", "inpu_name", "inpu_email", "inpu_address",
+        var aElems = ["inpu_userid", "inpu_pass", "inpu_name", "inpu_email", "inpu_address",
             "inpu_comment", "rolesInput"
         ];
 

@@ -1,5 +1,5 @@
 module.exports = {
-  dbconstr: 'mongodb://localhost:27017/comport_dev',
+  dbconstr: 'mongodb://localhost:27017/comport',
   extsys: {
             host: '1d.ddns.net',
             port: '8005',

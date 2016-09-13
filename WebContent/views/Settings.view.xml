@@ -49,7 +49,9 @@
 														<f:SimpleForm editable="false">
 															<Label text="UserID" />
 															<Input id='inpu_userid' enabled="false" value="{userid}" />
-															<Label text="Name" />
+														    <Label text="Password" />
+															<Input id='inpu_pass' enabled="false" type="Password" value="{pass}" />
+													    	<Label text="Name" />
 															<Input id='inpu_name' enabled="false" value="{name}" />
 															<Label text="Address" />
 															<Input id='inpu_address' enabled="false" value="{address}" />

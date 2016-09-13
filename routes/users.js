@@ -100,7 +100,7 @@ getUserList = function(req, res) {
         function(err, users) {
             if (!err) {
 
-                // get partnername.
+                // remove pass.
                 for (i = 0; i < users.length; i++) {
                     delete users[i].pass;
                 }
