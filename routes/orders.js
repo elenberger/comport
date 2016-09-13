@@ -310,8 +310,9 @@ _getOrderApprovals = function(aInputApprovals) {
                         getPartnerById(oApprovalStep.partnerid)
                             .then(
                                 function(oPartner) {
-                                    oApprovalStep.partnername = oPartner.partnername;
-																		resolve(oApprovalStep);
+                                    if (oPartner)
+                                       oApprovalStep.partnername = oPartner.partnername;
+								    resolve(oApprovalStep);
                                 });
                     });
 

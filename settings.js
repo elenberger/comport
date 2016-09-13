@@ -3,8 +3,8 @@ module.exports = {
   extsys: {
             host: '1d.ddns.net',
             port: '8005',
-            username: 'developer1',
-            password: 'Summer2016!'
+            username: 'drozdov',
+            password: 'bn13610hq'
   },
   emailer: {
     service: 'Mail.Ru',
